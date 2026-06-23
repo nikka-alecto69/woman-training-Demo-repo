@@ -224,3 +224,64 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
   .config-row .button { width:auto; }
 }
 @media (max-width: 360px) { .choice-grid.two { grid-template-columns:1fr; } }
+/* 女训 0.2 additions */
+.version-pill { margin-left: 3px; padding: 3px 6px; border-radius: 7px; color: var(--primary-deep); background: var(--primary-soft); font: 700 .6rem/1 "DM Mono", monospace; letter-spacing: 0; }
+.top-spacer { width: 39px; height: 39px; }
+.bottom-nav-five { grid-template-columns: repeat(5, 1fr); padding-inline: 7px; }
+.bottom-nav-five .nav-item { font-size: .61rem; }
+.bottom-nav-five .nav-item b { font-size: .9rem; }
+.input-field { display: flex; flex-direction: column; gap: 7px; margin: 0 0 15px; color: var(--ink); font-size: .86rem; font-weight: 800; }
+.input-field > span { color: var(--muted); font-size: .72rem; font-weight: 400; line-height: 1.45; }
+.input-field input, .input-field textarea, .exercise-row input { width: 100%; border: 1px solid var(--line); border-radius: 11px; padding: 11px 12px; color: var(--ink); background: #fff; outline: none; font-size: .85rem; }
+.input-field textarea { resize: vertical; min-height: 68px; }
+.input-field input:focus, .input-field textarea:focus, .exercise-row input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(89,55,201,.12); }
+.section-panel, .latest-metric, .cycle-card, .recommend-video, .strength-logger { margin: 19px 0; padding: 17px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+.section-panel .eyebrow, .strength-logger .eyebrow { margin-bottom: 7px; }
+.body-copy { margin: 11px 0 0; color: var(--muted); font-size: .86rem; line-height: 1.75; }
+.cycle-settings { margin: 8px 0 22px; border-color: #d7cdee; background: #fbfaff; }
+.cycle-card { position: relative; overflow: hidden; border-color: #cfc4f7; background: linear-gradient(135deg, #f8f6ff, #fffdfb); }
+.cycle-card h2 { margin: 0; font-size: 1.1rem; letter-spacing: -.04em; }
+.cycle-card p { margin: 12px 0 8px; color: var(--muted); font-size: .84rem; line-height: 1.7; }
+.cycle-card small { color: var(--primary-deep); font-size: .69rem; }
+.cycle-day { position: absolute; right: 16px; top: 16px; padding: 5px 8px; border-radius: 9px; color: var(--primary-deep); background: var(--primary-soft); font: 700 .67rem "DM Mono", monospace; }
+.deload-note, .mistake-card { margin: 15px 0; padding: 13px; border-radius: 12px; background: var(--primary-soft); color: var(--primary-deep); font-size: .82rem; line-height: 1.65; }
+.mistake-card { color: #714d33; background: var(--amber-soft); }
+.mistake-card h2 { margin-bottom: 7px; }
+.mistake-card ul { margin: 0; padding-left: 20px; }
+.mini-library { margin: 22px 0; }
+.action-chip { display: inline-flex; flex-direction: column; gap: 3px; margin: 0 7px 7px 0; padding: 9px 11px; border: 1px solid #d8cef8; border-radius: 11px; color: var(--primary-deep); background: #faf9ff; text-align: left; font-size: .81rem; font-weight: 800; }
+.action-chip span { color: var(--muted); font-size: .66rem; font-weight: 500; }
+.recommend-video { padding: 0; border: 0; background: transparent; }
+.media-list, .video-grid { display: grid; gap: 10px; margin-top: 12px; }
+.media-card { padding: 15px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+.media-card h3 { margin: 7px 0 3px; font-size: .95rem; letter-spacing: -.03em; }
+.media-card p { margin: 5px 0; color: var(--muted); font-size: .77rem; line-height: 1.55; }
+.media-card .media-creator { color: var(--ink); font-weight: 700; }
+.media-card.compact { padding: 13px; }
+.media-card .button { margin-top: 8px; }
+.subnav { display: flex; gap: 6px; margin: 18px 0; padding: 5px; overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.65); }
+.subnav button { flex: 1 0 auto; border: 0; border-radius: 9px; padding: 8px 10px; color: var(--muted); background: transparent; font-size: .76rem; font-weight: 800; }
+.subnav button.active { color: var(--primary-deep); background: var(--primary-soft); }
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.action-card { min-height: 145px; padding: 14px; border: 1px solid var(--line); border-radius: 15px; background: var(--paper); text-align: left; }
+.action-card:hover { border-color: #b5a5ed; }
+.action-card h3 { margin: 9px 0 5px; font-size: .96rem; letter-spacing: -.04em; }
+.action-card p, .action-card small { display: block; margin: 0; color: var(--muted); font-size: .71rem; line-height: 1.45; }
+.action-card small { margin-top: 7px; color: #8c7a84; }
+.action-meta { margin: 17px 0; padding: 13px; border-radius: 12px; color: var(--muted); background: #f8f4ef; font-size: .82rem; line-height: 1.7; }
+.strength-logger { margin-top: 22px; border-color: #d7cdee; background: #fbfaff; }
+.exercise-row { margin: 12px 0; padding: 12px; border: 1px solid #dfd7f7; border-radius: 12px; background: #fff; }
+.exercise-row > input { margin: 10px 0 8px; }
+.input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.two-col { grid-template-columns: 1fr 1fr; }
+.latest-metric { border-left: 4px solid var(--coral); }
+.latest-metric h2 { margin-bottom: 6px; }
+.latest-metric p { margin: 0; color: var(--muted); font-size: .84rem; }
+.admin-auth { display: grid; min-height: 100vh; padding: 24px; place-items: center; background: radial-gradient(circle at 80% 8%, rgba(89,55,201,.18), transparent 25rem), var(--bg); }
+.admin-auth-card { width: min(100%, 430px); padding: 26px; border: 1px solid var(--line); border-radius: 24px; background: var(--paper); box-shadow: var(--shadow); }
+.admin-auth-card h1 { margin: 8px 0; letter-spacing: -.06em; }
+.admin-auth-card > p:not(.eyebrow) { margin: 0 0 23px; color: var(--muted); font-size: .84rem; line-height: 1.65; }
+.form-error { min-height: 18px; margin: 9px 0 0; color: var(--danger); font-size: .78rem; }
+.data-preview { overflow: auto; margin: 14px 0 0; padding: 14px; border-radius: 12px; color: #e8e3ee; background: #292330; font: .72rem/1.6 "DM Mono", monospace; }
+@media (min-width: 700px) { .video-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 360px) { .bottom-nav-five .nav-item { font-size: .55rem; } .action-grid { grid-template-columns: 1fr; } }
