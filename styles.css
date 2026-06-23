@@ -239,11 +239,14 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
 .section-panel .eyebrow, .strength-logger .eyebrow { margin-bottom: 7px; }
 .body-copy { margin: 11px 0 0; color: var(--muted); font-size: .86rem; line-height: 1.75; }
 .cycle-settings { margin: 8px 0 22px; border-color: #d7cdee; background: #fbfaff; }
-.cycle-card { position: relative; overflow: hidden; border-color: #cfc4f7; background: linear-gradient(135deg, #f8f6ff, #fffdfb); }
+.cycle-card { display: grid; grid-template-columns: minmax(0, 1fr) 104px; column-gap: 12px; align-items: start; overflow: hidden; border-color: #cfc4f7; background: linear-gradient(135deg, #f8f6ff, #fffdfb); }
+.cycle-card-heading { grid-column: 1; display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
 .cycle-card h2 { margin: 0; font-size: 1.1rem; letter-spacing: -.04em; }
-.cycle-card p { margin: 12px 0 8px; color: var(--muted); font-size: .84rem; line-height: 1.7; }
-.cycle-card small { color: var(--primary-deep); font-size: .69rem; }
-.cycle-day { position: absolute; right: 16px; top: 16px; padding: 5px 8px; border-radius: 9px; color: var(--primary-deep); background: var(--primary-soft); font: 700 .67rem "DM Mono", monospace; }
+.cycle-card p { grid-column: 1; margin: 12px 0 8px; color: var(--muted); font-size: .84rem; line-height: 1.7; }
+.cycle-card small { grid-column: 1; color: var(--primary-deep); font-size: .69rem; }
+.cycle-card-visual { grid-column: 2; grid-row: 1 / span 3; width: 104px; margin: 0; align-self: center; }
+.cycle-card-visual img { display: block; width: 100%; height: auto; border-radius: 50%; }
+.cycle-day { flex: 0 0 auto; padding: 5px 8px; border-radius: 9px; color: var(--primary-deep); background: var(--primary-soft); font: 700 .67rem "DM Mono", monospace; }
 .deload-note, .mistake-card { margin: 15px 0; padding: 13px; border-radius: 12px; background: var(--primary-soft); color: var(--primary-deep); font-size: .82rem; line-height: 1.65; }
 .mistake-card { color: #714d33; background: var(--amber-soft); }
 .mistake-card h2 { margin-bottom: 7px; }
@@ -252,13 +255,16 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
 .action-chip { display: inline-flex; flex-direction: column; gap: 3px; margin: 0 7px 7px 0; padding: 9px 11px; border: 1px solid #d8cef8; border-radius: 11px; color: var(--primary-deep); background: #faf9ff; text-align: left; font-size: .81rem; font-weight: 800; }
 .action-chip span { color: var(--muted); font-size: .66rem; font-weight: 500; }
 .recommend-video { padding: 0; border: 0; background: transparent; }
+.video-section { margin: 24px 0 28px; }
+.video-section .section-title { margin-bottom: 10px; }
 .media-list, .video-grid { display: grid; gap: 10px; margin-top: 12px; }
-.media-card { padding: 15px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); }
+.media-card { display: block; min-height: 178px; padding: 15px; border: 1px solid var(--line); border-radius: 16px; color: inherit; background: var(--paper); text-decoration: none; }
+.media-card:hover { transform: translateY(-2px); border-color: #b5a5ed; box-shadow: 0 9px 22px rgba(65,48,99,.09); }
 .media-card h3 { margin: 7px 0 3px; font-size: .95rem; letter-spacing: -.03em; }
 .media-card p { margin: 5px 0; color: var(--muted); font-size: .77rem; line-height: 1.55; }
 .media-card .media-creator { color: var(--ink); font-weight: 700; }
 .media-card.compact { padding: 13px; }
-.media-card .button { margin-top: 8px; }
+.media-cta { display: block; margin-top: 10px; color: var(--primary-deep); font-size: .78rem; }
 .subnav { display: flex; gap: 6px; margin: 18px 0; padding: 5px; overflow-x: auto; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.65); }
 .subnav button { flex: 1 0 auto; border: 0; border-radius: 9px; padding: 8px 10px; color: var(--muted); background: transparent; font-size: .76rem; font-weight: 800; }
 .subnav button.active { color: var(--primary-deep); background: var(--primary-soft); }
@@ -285,3 +291,258 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
 .data-preview { overflow: auto; margin: 14px 0 0; padding: 14px; border-radius: 12px; color: #e8e3ee; background: #292330; font: .72rem/1.6 "DM Mono", monospace; }
 @media (min-width: 700px) { .video-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 360px) { .bottom-nav-five .nav-item { font-size: .55rem; } .action-grid { grid-template-columns: 1fr; } }
+
+/* ===== 周期模块（移植自 jing-dev 周期重建版）===== */
+.bottom-nav-six { grid-template-columns: repeat(6, 1fr); padding-inline: 5px; }
+.bottom-nav-six .nav-item { font-size: .57rem; }
+.bottom-nav-six .nav-item b { font-size: .86rem; }
+.cycle-health-card, .cycle-calendar {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid rgba(230,222,215,.9);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(45,35,41,.08);
+}
+.cycle-analysis {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.cycle-analysis h2 {
+  margin: 6px 0 5px;
+  font-size: 1.8rem;
+  letter-spacing: 0;
+}
+.cycle-analysis p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .86rem;
+}
+.cycle-analysis strong {
+  display: grid;
+  place-items: center;
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  color: var(--phase);
+  background: color-mix(in srgb, var(--phase) 12%, white);
+  border: 8px solid color-mix(in srgb, var(--phase) 28%, white);
+  text-align: center;
+  font-size: .8rem;
+  line-height: 1.2;
+}
+.cycle-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0 18px;
+}
+.cycle-metrics article {
+  min-width: 0;
+  padding: 14px 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(45,35,41,.05);
+}
+.cycle-metrics span, .cycle-metrics em {
+  display: block;
+  color: var(--muted);
+  font-size: .68rem;
+  font-style: normal;
+  line-height: 1.35;
+}
+.cycle-metrics b {
+  display: block;
+  margin: 7px 0 3px;
+  font-size: clamp(1.05rem, 4vw, 1.55rem);
+  font-weight: 900;
+  letter-spacing: 0;
+}
+.calendar-head {
+  display: grid;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+  margin-bottom: 13px;
+}
+.calendar-head strong {
+  text-align: center;
+  font-size: 1.05rem;
+}
+.week-row, .month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.week-row span {
+  padding-bottom: 8px;
+  color: var(--muted);
+  text-align: center;
+  font-size: .68rem;
+  font-weight: 800;
+}
+.month-grid {
+  gap: 2px 0;
+}
+.day-cell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-width: 0;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  isolation: isolate;
+}
+.day-cell::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 31px;
+  background: transparent;
+  z-index: -2;
+}
+.day-cell.in-period::before {
+  background: #ffe5e9;
+}
+.day-cell.period-start::before {
+  left: 50%;
+  border-radius: 999px 0 0 999px;
+}
+.day-cell.period-end::before {
+  right: 50%;
+  border-radius: 0 999px 999px 0;
+}
+.day-cell.period-start.period-end::before {
+  left: 50%;
+  right: 50%;
+}
+.day-cell span {
+  display: grid;
+  place-items: center;
+  width: 31px;
+  height: 31px;
+  border-radius: 50%;
+  font-size: .82rem;
+  font-weight: 750;
+}
+.day-cell.selected span {
+  color: #fff;
+  background: #e44f66;
+}
+.day-cell.selected span::after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #e44f66;
+}
+.day-cell.muted-day {
+  color: #b7adb5;
+}
+.calendar-hint {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: .74rem;
+  line-height: 1.55;
+}
+.cycle-education {
+  display: grid;
+  grid-template-columns: 118px 1fr;
+  gap: 18px;
+  align-items: center;
+}
+.cycle-asset-panel {
+  grid-template-columns: 1fr;
+}
+.cycle-ring-image {
+  display: block;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.phase-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.phase-legend i {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: .7rem;
+  font-style: normal;
+  font-weight: 800;
+}
+.phase-legend i::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+}
+.cycle-education p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .8rem;
+  line-height: 1.6;
+}
+.episode-list {
+  margin-top: 22px;
+}
+.episode-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .84rem;
+}
+.episode-row strong {
+  color: var(--ink);
+}
+.empty-small {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.6;
+}
+@media (max-width: 360px) { .bottom-nav-six .nav-item { font-size: .5rem; } }
+
+/* ===== 训练库 v2（移植自 jing-dev Workout Library v2）===== */
+.workout-card small {
+  display: block;
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: .72rem;
+  line-height: 1.5;
+}
+.workout-gif {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  margin-bottom: 11px;
+  border-radius: 12px;
+  background: var(--coral-soft);
+}
+.workout-demo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  margin-bottom: 15px;
+  border-radius: 15px;
+  border: 1px solid var(--line);
+  background: var(--coral-soft);
+}
