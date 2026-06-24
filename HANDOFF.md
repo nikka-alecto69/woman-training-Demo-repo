@@ -46,3 +46,11 @@
 - 更新 `backend/wrangler.toml` 的 D1 `database_id`。
 - 部署 Worker。
 - 将 `runtime-config.js` 的 `API_BASE` 改为 Worker 地址。
+
+### 0.3 增量完成
+
+- GitHub Pages 在未配置 API_BASE 时明确显示本机演示模式，不发同步请求，也不把未配置后端表现为错误。
+- 新增 nvxun_cycleProfile 和单独的周期档案页面；适用用户必须完成档案后才能进入今日打卡。
+- 周期页和推荐结果都会展示基于填写信息的预计阶段、可信度、训练提示与非医疗化说明。
+- 推荐逻辑同时使用周期阶段、用户主观感受、今日状态、训练水平和目标，并保持原有训练库和记录流程。
+- Worker 增加周期档案/产品反馈事件，以及 premenstrual 和 unknown 阶段枚举。

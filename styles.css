@@ -864,3 +864,46 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
   color: var(--primary-deep);
   background: var(--primary-soft);
 }
+
+
+/* NVXUN_V03_STYLES */
+.cycle-setup-form select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 11px 12px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+}
+.cycle-profile-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 18px 0 10px;
+}
+.cycle-profile-summary div {
+  min-width: 0;
+  padding: 13px 10px;
+  border: 1px solid #d9d0f2;
+  border-radius: 15px;
+  background: #fbfaff;
+}
+.cycle-profile-summary span,
+.cycle-profile-summary b { display: block; }
+.cycle-profile-summary span { color: var(--muted); font-size: .68rem; line-height: 1.35; }
+.cycle-profile-summary b { margin-top: 6px; color: var(--primary-deep); font-size: .82rem; overflow-wrap: anywhere; }
+.cycle-estimate-card { grid-template-columns: minmax(0, 1fr) 104px; }
+.cycle-estimate-card strong { color: var(--primary-deep); }
+.premenstrual-note {
+  margin: -6px 0 16px;
+  padding: 10px 12px;
+  border-left: 4px solid #f0c34e;
+  border-radius: 10px;
+  color: #745a19;
+  background: #fff6d9;
+  font-size: .8rem;
+  line-height: 1.55;
+}
+.feedback-entry { width: 100%; margin: 20px 0 8px; }
+@media (max-width: 420px) { .cycle-profile-summary { grid-template-columns: 1fr; } }

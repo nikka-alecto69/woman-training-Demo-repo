@@ -120,3 +120,13 @@ crons = ["17 3 * * *"]
 - 单次 payload 限制为 10KB。
 - Worker 不保存 IP 地址、浏览器 UA、设备 ID 或原始 participantId。
 - 管理后台只展示汇总指标和单条明确授权的文字反馈，不展示个人级原始记录。
+
+## 8. 0.3 数据边界
+
+前端 runtime-config.js 的 API_BASE 留空时，是完整可用的 GitHub Pages 本机演示模式：不要把它当作错误，也不要为测试用户要求安装任何东西。
+
+Worker 的匿名事件枚举包含 cycle_profile_completed 和 product_feedback_opened。训练反馈可选的 cyclePhase 仅接受：
+
+menstrual | follicular | ovulation | luteal | premenstrual | unknown
+
+不要扩展 payload 来传输 lastPeriodStartDate、periodStartDates、averageCycleLength、averagePeriodLength、cycleDay、daysToNextPeriod、体重、围度、力量训练重量/组数/次数、RPE 或备注。文字反馈也必须逐条取得单独授权。
