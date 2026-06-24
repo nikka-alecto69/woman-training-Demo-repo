@@ -1,0 +1,11 @@
+name = "nvxun-research-api"
+main = "worker.js"
+compatibility_date = "2026-06-24"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nvxun_research"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[triggers]
+crons = ["17 3 * * *"]
