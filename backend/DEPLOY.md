@@ -15,7 +15,7 @@ wrangler d1 create nvxun_research
 [[d1_databases]]
 binding = "DB"
 database_name = "nvxun_research"
-database_id = "你的 D1 database_id"
+database_id = "妳的 D1 database_id"
 ```
 
 ## 2. 执行数据库 schema
@@ -68,7 +68,7 @@ wrangler deploy
 部署后访问：
 
 ```text
-https://你的-worker.workers.dev/v1/health
+https://妳的-worker.workers.dev/v1/health
 ```
 
 应返回：
@@ -83,13 +83,42 @@ https://你的-worker.workers.dev/v1/health
 
 ```js
 window.NVXUN_CONFIG = {
-  API_BASE: "https://你的-worker.workers.dev"
+  API_BASE: "https://妳的-worker.workers.dev"
 };
 ```
 
 `runtime-config.js` 只能放公开 Worker 地址，不能放密码、密钥或数据库凭据。
 
-## 7. 验证前后台联通
+## 7. 部署后 curl 验证（必须全部通过）
+
+部署完成后依次执行（将 `$API_BASE` 替换为妳的 Worker 域名，例如 `https://nvxun-research-api.xxx.workers.dev`）：
+
+```bash
+# 1. Health check（无需 origin，应返回 200 + JSON）
+curl -si "$API_BASE/v1/health"
+
+# 2. CORS 预检（应返回 204 + Access-Control-Allow-Origin 头）
+curl -si -X OPTIONS "$API_BASE/v1/consent" \
+  -H "Origin: https://nikka-alecto69.github.io" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: content-type"
+
+# 3. 最小合法 consent payload（应返回 200 {"ok":true}）
+curl -si -X POST "$API_BASE/v1/consent" \
+  -H "Origin: https://nikka-alecto69.github.io" \
+  -H "Content-Type: application/json" \
+  -d '{"participantId":"test-local-only-xxxxxxxx","consentVersion":"1","anonymousAnalytics":true,"anonymousTrainingFeedback":false,"cycleAggregate":false,"updatedDate":"2026-06-24"}'
+
+# 4. 最小合法 event payload（应返回 200 {"ok":true}）
+curl -si -X POST "$API_BASE/v1/event" \
+  -H "Origin: https://nikka-alecto69.github.io" \
+  -H "Content-Type: application/json" \
+  -d '{"participantId":"test-local-only-xxxxxxxx","consentVersion":"1","eventType":"app_opened","eventDate":"2026-06-24"}'
+```
+
+全部返回期望结果后，再进行前台联通验证。
+
+## 7b. 验证前后台联通
 
 1. 打开 GitHub Pages 前台。
 2. 进入「隐私」页，确认显示“匿名测试同步已启用”。

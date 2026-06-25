@@ -224,7 +224,7 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
   .config-row .button { width:auto; }
 }
 @media (max-width: 360px) { .choice-grid.two { grid-template-columns:1fr; } }
-/* 女训 0.2 additions */
+/* 女训 0.3 additions */
 .version-pill { margin-left: 3px; padding: 3px 6px; border-radius: 7px; color: var(--primary-deep); background: var(--primary-soft); font: 700 .6rem/1 "DM Mono", monospace; letter-spacing: 0; }
 .top-spacer { width: 39px; height: 39px; }
 .bottom-nav-five { grid-template-columns: repeat(5, 1fr); padding-inline: 7px; }
@@ -907,3 +907,85 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
 }
 .feedback-entry { width: 100%; margin: 20px 0 8px; }
 @media (max-width: 420px) { .cycle-profile-summary { grid-template-columns: 1fr; } }
+
+/* V0.4 视频互动 + 经期日历首填 */
+.video-card { min-height: auto; }
+.video-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.video-actions .button.small { flex: 1 1 auto; }
+.tag.warn { color: #8a5a00; background: #ffe9c2; }
+.cycle-setup-cta { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+.choice-grid .choice input { margin-right: 6px; }
+.video-section { margin-top: 18px; }
+
+/* ===== NVXUN V06 — 紧凑训练卡 / 训练库分层 / 视频专区 / 进阶力量日志 ===== */
+:root {
+  --positive: #2f9e75;
+  --positive-soft: #def5ec;
+  --caution-soft: #f4eee2;
+  --caution-ink: #8a6d2f;
+}
+
+/* 紧凑训练网格 */
+.workout-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.workout-card.compact-card { padding: 11px; border-radius: 15px; display: flex; flex-direction: column; min-width: 0; }
+.compact-card .wc-thumb { width: 100%; height: 78px; object-fit: cover; border-radius: 11px; background: var(--coral-soft); margin-bottom: 8px; }
+.compact-card .wc-tags { display: flex; flex-wrap: wrap; gap: 3px 0; margin-bottom: 5px; }
+.compact-card .wc-tags .tag { margin-right: 4px; font-size: .6rem; padding: 2px 6px; }
+.compact-card .wc-title { margin: 0 0 4px; font-size: .9rem; line-height: 1.3; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.compact-card .wc-desc { margin: 0; color: var(--muted); font-size: .74rem; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.compact-card .wc-part { display: block; margin-top: 6px; color: var(--muted); font-size: .66rem; }
+@media (min-width: 720px) { .workout-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 360px) { .workout-grid { grid-template-columns: 1fr; } .compact-card .wc-thumb { height: 96px; } }
+
+/* 训练库分层 chips */
+.lib-l1 { display: flex; gap: 8px; margin: 6px 0 10px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.lib-l2 { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 4px; }
+.chip { flex: 0 0 auto; border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; color: var(--muted); background: var(--paper); font-size: .8rem; font-weight: 700; white-space: nowrap; }
+.chip.small { padding: 5px 11px; font-size: .74rem; }
+.chip.active { color: #fff; background: var(--primary); border-color: var(--primary); }
+
+/* 视频专区 */
+.form-intro.attitude { margin-bottom: 4px; color: var(--ink); font-weight: 700; }
+.form-subhint { margin: 0 0 18px; color: var(--muted); font-size: .8rem; line-height: 1.6; }
+.video-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.video-card { display: flex; flex-direction: column; min-width: 0; min-height: auto; padding: 13px; }
+.video-card h3 { margin: 4px 0 3px; font-size: .9rem; overflow-wrap: anywhere; }
+.video-card .media-creator { margin: 0 0 5px; font-size: .76rem; }
+.video-card .src-sub { color: var(--muted); font-weight: 600; }
+.vc-fit { margin: 0 0 7px; color: var(--muted); font-size: .76rem; line-height: 1.5; }
+.vc-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 9px; }
+.vc-chips .tag { margin-right: 0; font-size: .62rem; }
+.video-card .video-actions { margin-top: auto; gap: 6px; }
+.video-card .video-actions .button.small { flex: 1 1 100%; padding: 8px; font-size: .76rem; }
+.vc-hint { margin: 7px 0 0; color: var(--positive); font-size: .64rem; line-height: 1.45; }
+.vc-hint.muted { color: var(--caution-ink); }
+.btn-positive { color: var(--positive); background: var(--positive-soft); font-weight: 800; }
+.btn-positive.is-recommended { color: #fff; background: var(--positive); opacity: 1; }
+.btn-caution { color: var(--caution-ink); background: var(--caution-soft); }
+@media (max-width: 360px) { .video-grid { grid-template-columns: 1fr; } }
+
+/* 进阶力量日志 */
+.section-head { gap: 8px; flex-wrap: wrap; }
+.strength-form { display: block; }
+.strength-row { margin: 12px 0; padding: 11px; border: 1px solid var(--line); border-radius: 13px; background: rgba(255,255,255,.6); }
+.strength-row > input { width: 100%; margin: 6px 0; }
+.strength-row .sx-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.strength-row .sx-grid input { width: 100%; min-width: 0; }
+.row-vol { margin: 7px 0 0; color: var(--muted); font-size: .74rem; }
+.row-vol strong { color: var(--primary-deep); }
+.strength-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 12px; }
+.total-vol { margin: 6px 0 12px; font-size: .92rem; }
+.total-vol strong { color: var(--primary-deep); }
+
+/* 训练分布热力图 */
+.heat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+.heat-cell { position: relative; border-radius: 12px; padding: 18px 8px; text-align: center; border: 1px solid var(--line); background: color-mix(in srgb, var(--primary) calc(var(--heat) * 100%), var(--paper)); }
+.heat-cell span { font-size: .72rem; font-weight: 700; color: var(--ink); }
+@media (max-width: 360px) { .heat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* 训练容量趋势 */
+.vol-trend { display: block; width: 100%; height: auto; margin: 8px 0 4px; }
+
+/* 个人回顾 */
+.review-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
+.review-cols h4 { margin: 0 0 6px; }
