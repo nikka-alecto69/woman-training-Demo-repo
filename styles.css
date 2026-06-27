@@ -224,7 +224,7 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
   .config-row .button { width:auto; }
 }
 @media (max-width: 360px) { .choice-grid.two { grid-template-columns:1fr; } }
-/* 女训 0.3 additions */
+/* 女训 0.2 additions */
 .version-pill { margin-left: 3px; padding: 3px 6px; border-radius: 7px; color: var(--primary-deep); background: var(--primary-soft); font: 700 .6rem/1 "DM Mono", monospace; letter-spacing: 0; }
 .top-spacer { width: 39px; height: 39px; }
 .bottom-nav-five { grid-template-columns: repeat(5, 1fr); padding-inline: 7px; }
@@ -336,9 +336,13 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
 }
 .cycle-metrics {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   margin: 12px 0 18px;
+}
+/* 阶段 + 距离下次月经并排；训练提示内容多，独占一行 (req K) */
+.cycle-metrics article:nth-child(3) {
+  grid-column: 1 / -1;
 }
 .cycle-metrics article {
   min-width: 0;
@@ -989,3 +993,86 @@ th { color:var(--muted); font-size:.7rem; font-weight:800; }
 /* 个人回顾 */
 .review-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 10px 0; }
 .review-cols h4 { margin: 0 0 6px; }
+
+/* ===== NVXUN_V07 循证知识与推荐依据层 ===== */
+.today-main-card { margin-top: 18px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); box-shadow: var(--shadow); display: grid; gap: 10px; }
+.today-main-card .tmc-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.today-main-card .tmc-label { color: var(--muted); font-size: .8rem; letter-spacing: .02em; }
+.today-main-card .tmc-row strong { color: var(--primary-deep); font-size: .95rem; text-align: right; }
+
+.variant-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 12px; }
+.variant-tab { min-height: 44px; padding: 8px 6px; border: 1px solid var(--line); border-radius: 13px; background: var(--paper); color: var(--ink); font-size: .82rem; line-height: 1.3; }
+.variant-tab.selected { border-color: var(--primary); color: var(--primary-deep); background: var(--primary-soft); box-shadow: inset 0 0 0 1px var(--primary); }
+
+.why-drawer { margin-top: 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,.66); }
+.why-drawer > summary { cursor: pointer; font-weight: 600; color: var(--primary-deep); list-style: none; }
+.why-drawer > summary::-webkit-details-marker { display: none; }
+.why-drawer > summary::after { content: " ▾"; color: var(--muted); }
+.why-drawer[open] > summary::after { content: " ▴"; }
+.why-sub { margin: 12px 0 6px; font-size: .82rem; color: var(--muted); }
+.why-list, .why-evidence, .why-disclaimer, .lifestyle-list, .source-list { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+.why-list li, .lifestyle-list li { font-size: .86rem; line-height: 1.6; color: var(--ink); }
+.why-evidence li { font-size: .84rem; line-height: 1.6; color: var(--ink); }
+.evidence-src { display: block; margin-top: 2px; color: var(--muted); font-size: .74rem; }
+.why-disclaimer { list-style: none; padding-left: 0; }
+.why-disclaimer li { font-size: .8rem; line-height: 1.6; color: var(--muted); padding-left: 14px; position: relative; }
+.why-disclaimer li::before { content: "•"; position: absolute; left: 2px; color: var(--coral); }
+
+.lifestyle-panel { margin-top: 18px; }
+.source-list { padding-left: 0; list-style: none; gap: 12px; }
+.source-list li { font-size: .86rem; line-height: 1.6; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+.source-list small { color: var(--muted); }
+.variant-note { margin: 0 0 12px; font-size: .8rem; line-height: 1.6; color: var(--muted); }
+
+/* —— 饮食建议块 / 科普卡片 / 出处灰字 (req A·B) —— */
+.source-foot { font-size: 11px; color: #9a9a9a; line-height: 1.6; margin: 12px 0 0; }
+.source-foot sup, .diet-list sup, .science-card sup, .protein-card sup { color: #b3aab1; font-size: 9px; margin-left: 2px; }
+
+.diet-advice .protein-card { background: var(--sage-soft); border: 1px solid #cfe6dd; border-radius: 16px; padding: 14px 16px; margin: 4px 0 14px; }
+.protein-card .pc-head { margin: 0 0 4px; font-weight: 700; color: var(--sage); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.protein-card .pc-weight { font-size: .72rem; font-weight: 500; color: var(--muted); }
+.protein-card .pc-range { margin: 0 0 6px; font-size: 1rem; color: var(--ink); }
+.protein-card .pc-range strong { font-size: 1.4rem; color: var(--sage); }
+.protein-card .pc-food { margin: 0; font-size: .86rem; line-height: 1.6; color: var(--ink); }
+
+.diet-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.diet-list li { padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+.diet-list .tip-main { display: block; font-size: .92rem; line-height: 1.55; color: var(--ink); }
+.diet-list .tip-why { display: block; margin-top: 4px; font-size: .8rem; line-height: 1.55; color: var(--muted); }
+
+.science-cards .science-card { padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); margin-bottom: 12px; }
+.science-cards .science-card h3 { margin: 0 0 6px; font-size: .96rem; color: var(--primary-deep); }
+.science-cards .science-card p { margin: 0; font-size: .86rem; line-height: 1.6; color: var(--ink); }
+
+/* —— C：月经祝贺弹层 + 烟花 —— */
+.celebrate-overlay { position: fixed; inset: 0; z-index: 9999; display: grid; place-items: center; background: rgba(37, 27, 40, .42); backdrop-filter: blur(2px); padding: 24px; }
+.celebrate-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.celebrate-card { position: relative; max-width: 360px; width: 100%; background: var(--paper); border-radius: 22px; padding: 26px 22px; text-align: center; box-shadow: var(--shadow); animation: celebratePop .35s ease; }
+.celebrate-emoji { font-size: 2.4rem; margin-bottom: 6px; }
+.celebrate-card h2 { margin: 0 0 10px; color: var(--primary-deep); }
+.celebrate-card p { margin: 0 0 18px; font-size: .94rem; line-height: 1.7; color: var(--ink); }
+@keyframes celebratePop { from { transform: scale(.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .celebrate-card { animation: none; } }
+
+/* —— E·F：记录页日历 + 配色 —— */
+.record-calendar { margin-top: 8px; }
+.month-grid.record-grid { gap: 4px; }
+.rec-day { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 5px 0 4px; border: 0; background: transparent; cursor: pointer; border-radius: 12px; min-height: 46px; }
+.rec-day.editing { background: var(--primary-soft); }
+.rec-day.muted-day { opacity: .35; }
+.rec-day .day-num { display: grid; place-items: center; width: 26px; height: 26px; font-size: .82rem; color: var(--ink); }
+.rec-day .day-num.is-period { background: var(--coral); color: #fff; border-radius: 50%; font-weight: 700; }
+.cal-strip { font-size: 9px; line-height: 1; padding: 2px 5px; border-radius: 6px; color: #2c3a2c; white-space: nowrap; }
+.cal-strip.strength { background: #86e08b; }
+.cal-strip.low { background: #eef7b0; }
+.cal-legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 2px 14px; font-size: .76rem; color: var(--muted); }
+.cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.cal-legend .lg { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.cal-legend .lg.strength { background: #86e08b; }
+.cal-legend .lg.low { background: #eef7b0; }
+.cal-legend .lg.period { background: var(--coral); border-radius: 50%; }
+.day-workout-form { margin-top: 6px; }
+
+/* —— G：视频取消推荐态 —— */
+.video-card.dismissed { opacity: .6; background: var(--bg); }
+.video-card.dismissed h3 { color: var(--muted); }

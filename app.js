@@ -1,4 +1,4 @@
-/* 女训 MVP 0.3：纯前端、本地优先。周期阶段仅供训练参考，不是医学或激素诊断。 */
+/* 女训 MVP 0.2：纯前端、本地优先。周期阶段仅供训练参考，不是医学或激素诊断。 */
 (() => {
 'use strict';
 const STORAGE_KEYS={USER_PROFILE:'nvxun_userProfile',DAILY_CHECKINS:'nvxun_dailyCheckins',WORKOUT_LOGS:'nvxun_workoutLogs',STRENGTH_LOGS:'nvxun_strengthWorkoutLogs',BODY_METRICS:'nvxun_bodyMetricLogs',MENSTRUATION_DAYS:'nvxun_menstruationDays',ADMIN_AUTH:'nvxun_adminAuth',EVENTS:'nvxun_events',DEVICE:'nvxun_deviceId',RESEARCH_CONSENT:'nvxun_researchConsent',PRODUCT_FEEDBACKS:'nvxun_productFeedbacks'};
@@ -34,7 +34,7 @@ function phaseForUpload(result){const c=consent();if(!c.cycleAggregate)return nu
 function fireSync(p,quiet=true){p.catch(()=>{if(!quiet)syncTip()})}
 const dateLabel=v=>{const d=new Date(`${v}T12:00:00`);return `${d.getMonth()+1}月${d.getDate()}日`};
 const newest=(a,k='createdAt')=>[...a].sort((x,y)=>String(y[k]||y.date).localeCompare(String(x[k]||x.date)));
-const cycleStage=v=>['有规律月经','有月经，但不太规律','经前反应明显'].includes(v);
+const cycleStage=v=>{const arr=Array.isArray(v)?v:(v?[v]:[]);return arr.some(s=>['有规律月经','有月经，但不太规律','经前反应明显'].includes(s));};
 const regular=p=>['每周规律运动 3 次及以上','有稳定力量训练经验'].includes(p?.trainingLevel);
 const beginner=p=>['几乎没接触过健身','健身初期，偶尔练'].includes(p?.trainingLevel);
 function migrate(){
@@ -46,7 +46,7 @@ function migrate(){
 }migrate();
 const profileFields=[
  ['ageRange','妳的年龄段',['18—24 岁','25—34 岁','35—44 岁','45—54 岁','55 岁以上','不想回答']],
- ['bodyStage','妳现在的身体阶段',['有规律月经','有月经，但不太规律','经前反应明显','正在经历或接近围绝经期','已经绝经','不确定 / 不想回答']],
+ ['bodyStage','妳现在的身体阶段',['有规律月经','有月经，但不太规律','经前反应明显','正在经历或接近围绝经期','已经绝经','不确定 / 不想回答'],true,'可多选，例如“有规律月经”和“经前反应明显”可并存'],
  ['trainingLevel','妳的训练水平',['几乎没接触过健身','健身初期，偶尔练','每周规律运动 1—2 次','每周规律运动 3 次及以上','有稳定力量训练经验']],
  ['goals','妳想从训练中获得什么？',['建立运动习惯','减脂','增肌','提升力量','改善经期/经前状态','改善睡眠和疲劳','增加肌肉，预防衰老','保持长期运动状态'],true,'最多选择 3 项'],
  ['trainingPlace','妳更常在哪里训练？',['居家无器械','居家小器械','健身房器械','自由重量训练','都可以']]
@@ -155,7 +155,7 @@ function calculateRecommendation(c,profile={}){let score=5;const p={sleep:{'好'
 function chooseWorkouts(profile,result){const goals=profile.goals||[],place=profile.trainingPlace||'都可以',isRegular=regular(profile),isBeginner=beginner(profile),phase=result.phase?.current_phase||result.phase?.phaseKey,allowedTypes=place.includes('健身房')||place.includes('都可以')?['machine','cable','dumbbell','barbell','bodyweight','mobility','pilates_yoga','hiit']:place.includes('自由重量')?['dumbbell','barbell','bodyweight','mobility','pilates_yoga','hiit']:place.includes('小器械')?['dumbbell','bodyweight','mobility','pilates_yoga','hiit']:['bodyweight','mobility','pilates_yoga','hiit'];let allowedIntensity=result.dayType==='恢复日'?['low']:result.dayType==='降载日'||phase==='luteal'||phase==='menstrual'?['low','medium']:['low','medium','high'];if(isBeginner)allowedIntensity=allowedIntensity.filter(x=>x!=='high');let pool=workoutLibraryV2.filter(w=>allowedTypes.includes(w.type)&&allowedIntensity.includes(w.intensity_level));if(goals.includes('减脂')&&result.dayType!=='恢复日')pool.sort((a,b)=>(b.type==='hiit')-(a.type==='hiit'));else if(isRegular&&['follicular','ovulation'].includes(phase)&&result.dayType!=='降载日')pool.sort((a,b)=>(['barbell','machine','dumbbell','cable'].includes(b.type))-(['barbell','machine','dumbbell','cable'].includes(a.type))||b.minutes-a.minutes);else if(result.dayType==='恢复日'||phase==='menstrual')pool.sort((a,b)=>(['mobility','pilates_yoga'].includes(b.type))-(['mobility','pilates_yoga'].includes(a.type)));if(!pool.length)pool=workoutLibraryV2.filter(w=>['mobility','bodyweight','pilates_yoga'].includes(w.type)&&allowedIntensity.includes(w.intensity_level));const picked=[];for(const w of pool){if(!picked.some(x=>x.type===w.type||x.id===w.id))picked.push(w);if(picked.length>=3)break}return picked.length?picked:workoutLibraryV2.slice(0,3)}
 function reasons(profile,c,result){const r=[];if(c.sleep==='差'||c.energy==='低')r.push('睡眠和精力让今天的恢复空间变小');if(c.pain!=='无'||c.soreness==='明显')r.push('身体不适需要优先被照顾');if(c.cycleStatus.includes('经期')||c.cycleStatus.includes('经前'))r.push('妳填写的周期状态也提示今天更适合灵活调整');if(result.phase.phase!=='不确定')r.push(`${result.phase.phaseLabel.replace('预计','')}只是额外的训练参考，不替代妳的实际感受`);const level=profile.trainingLevel?`妳的训练水平是「${profile.trainingLevel}」`:'';const goal=(profile.goals||[]).slice(0,2).join('、');return `${level}${level&&goal?'，':''}${goal?`妳想关注${goal}`:''}。${r.length?r.join('；'):'今天的状态整体稳定，可以在动作质量优先的前提下完成训练。'}`}
 function latest(){const a=newest(read(STORAGE_KEYS.DAILY_CHECKINS,[]),'date'),c=a.find(x=>x.date===today())||a[0];if(!c)return null;const p=read(STORAGE_KEYS.USER_PROFILE,{}),r=calculateRecommendation(c,p);return{...r,score:c.score??r.score,dayType:c.dayType||r.dayType,workouts:chooseWorkouts(p,r),checkin:c}}
-const header=back=>`<header class="topbar"><div class="brand"><span class="brand-mark">力</span>女训 <span class="version-pill">0.3</span></div>${back?`<button class="icon-button" data-action="${back}" aria-label="返回">←</button>`:'<span class="top-spacer"></span>'}</header>`;
+const header=back=>`<header class="topbar"><div class="brand"><span class="brand-mark">力</span>女训 NüFit <span class="version-pill">1.0</span></div>${back?`<button class="icon-button" data-action="${back}" aria-label="返回">←</button>`:'<span class="top-spacer"></span>'}</header>`;
 function nav(){const active=state.screen,item=(s,i,l)=>`<button class="nav-item ${active===s||(s==='library'&&active==='action')||(s==='checkin'&&['result','workout','feedback','cycle-setup'].includes(active))?'active':''}" data-action="nav" data-screen="${s}"><b>${i}</b>${l}</button>`;return `<nav class="bottom-nav bottom-nav-six">${item('checkin','◉','今日方案')}${item('cycle','●','周期')}${item('library','▧','训练库')}${item('videos','▷','视频')}${item('records','▤','记录')}${item('privacy','□','隐私')}</nav>`}
 const shell=(content,withNav=true)=>app.innerHTML=`<section class="shell">${content}${withNav?nav():''}</section>`;
 function field(f,d,kind){const[k,label,options,multi,hint]=f,selected=multi?(d[k]||[]):d[k];return `<fieldset class="question"><legend>${label}${hint?`<span class="question-hint">${hint}</span>`:''}</legend><div class="choice-grid ${options.length<=4?'two':''}">${options.map(v=>`<button type="button" class="choice ${multi?'check':''} ${(multi?selected.includes(v):selected===v)?'selected':''}" data-action="pick" data-kind="${kind}" data-field="${k}" data-value="${esc(v)}"><span class="dot"></span>${esc(v)}</button>`).join('')}</div></fieldset>`}
@@ -171,7 +171,7 @@ function videoCard(v,compact=false){const cta=v.kind==='direct'?'点开即练':'
 function cycleCard(p){return `<section class="cycle-card"><div class="cycle-card-heading"><div><p class="eyebrow">YOUR CYCLE NOTE</p><h2>${p.phaseLabel}</h2></div>${p.cycleDay?`<span class="cycle-day">第 ${p.cycleDay} 天</span>`:'<span class="cycle-day">信息不足</span>'}</div><figure class="cycle-card-visual"><img class="cycle-ring-image" src="${RING_IMG}" alt="月经周期阶段示意环图"><div class="ring-fallback" hidden role="status" aria-live="polite"><div class="ring-skeleton" aria-hidden="true"></div><p>周期模型加载中…</p></div></figure><p>${p.explanation}</p><small>基于妳填写的周期信息推算 · 参考信心：${p.confidence}</small></section>`}
 function monthDays(month=state.calendarMonth){const[y,m]=month.split('-').map(Number),first=new Date(y,m-1,1),start=new Date(first);start.setDate(first.getDate()-first.getDay());return Array.from({length:42},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return{iso:toISO(d),day:d.getDate(),inMonth:d.getMonth()===m-1}})}
 function shiftCalendarMonth(n){const d=parseDay(`${state.calendarMonth}-01`);d.setMonth(d.getMonth()+n);state.calendarMonth=toISO(d).slice(0,7)}
-function rangeDays(a,b){let start=a,end=b;if(daysBetween(start,end)<0)[start,end]=[end,start];const out=[];for(let d=start;daysBetween(d,end)<=0;d=addDays(d,1))out.push(d);return out}
+function rangeDays(a,b){let start=a,end=b;if(daysBetween(start,end)<0)[start,end]=[end,start];const out=[];for(let d=start;daysBetween(d,end)>=0;d=addDays(d,1))out.push(d);return out}
 function toggleCycleDay(day){const set=new Set(menstruationDays());set.has(day)?set.delete(day):set.add(day);state.selectedPhase=null;saveMenstruationDays([...set])}
 function paintCycleRange(start,end,mode){const set=new Set(menstruationDays());rangeDays(start,end).forEach(day=>mode==='remove'?set.delete(day):set.add(day));state.selectedPhase=null;saveMenstruationDays([...set])}
 function phaseWheel(cur,sel){const keys=Object.keys(PHASES),activeKey=sel||cur,active=PHASES[activeKey]||PHASES[sel]||PHASES[cur]||PHASES.menstrual,curName=cur?PHASES[cur].name:'暂无法判断',viewName=activeKey?active.name:'请选择阶段',isBrowsing=cur&&activeKey&&activeKey!==cur;return `<section class="cycle-health-card cycle-ring-panel"><h2 class="section-title ring-title">月经周期四个阶段图</h2><figure class="ring-figure" style="--active:${active.color}"><img class="cycle-ring-image" src="${RING_IMG}" alt="月经周期四个阶段图"><svg class="phase-hotspots" viewBox="0 0 365 329" role="group" aria-label="点击查看月经周期四个阶段" focusable="false">${keys.map(k=>{const p=PHASES[k],activeClass=k===activeKey?' active':'',currentClass=k===cur?' current':'';return `<path class="phase-zone${activeClass}${currentClass}" data-action="phase-highlight" data-phase="${k}" d="${PHASE_HOTSPOTS[k]}" fill="${p.color}" stroke="${p.color}" tabindex="0" role="button" aria-label="查看${p.name}" aria-pressed="${k===activeKey}" style="--c:${p.color}"></path>`}).join('')}</svg><div class="phase-view-badge" aria-hidden="true">${cur&&activeKey===cur?'当前':'查看中'}</div><div class="ring-fallback" hidden role="status" aria-live="polite"><div class="ring-skeleton" aria-hidden="true"></div><p>周期模型加载中…</p></div></figure><div class="phase-legend" role="tablist" aria-label="月经周期四阶段">${keys.map(k=>{const p=PHASES[k];return `<button type="button" class="phase-chip${k===activeKey?' active':''}${k===cur?' is-current':''}" data-action="phase-highlight" data-phase="${k}" style="--c:${p.color}" aria-selected="${k===activeKey}" aria-pressed="${k===activeKey}"><i></i><span>${p.name}</span>${k===cur?'<small>当前</small>':''}</button>`}).join('')}</div><div class="phase-detail" style="--c:${active.color}"><div class="phase-detail-head"><strong>${active.name} · ${active.tone}</strong>${cur?`<button type="button" class="text-button phase-current-button" data-action="phase-current">回到当前阶段</button>`:''}</div><p class="phase-view-note">正在查看：${viewName}｜妳当前预计处于：${curName}</p><p>${active.explanation}</p></div><p class="ring-empathy">周期是身体的节律，而不是限制。<br>每一个阶段都有它独特的力量表达方式。<br>有些时候适合推进，有些时候适合收回——这都是正常的身体智慧。</p></section>`}
@@ -180,7 +180,7 @@ function result(){const r=state.last||latest();if(!r){state.screen='checkin';ret
 function workout(){const w=workoutLibraryV2.find(x=>x.id===state.workoutId);if(!w){state.screen='result';return render()}const relatedActions=actions.filter(a=>w.actionIds.includes(a.id)),related=videos.filter(v=>w.videoCategories.includes(v.category)).slice(0,2);shell(`${header('result')}<p class="eyebrow">TODAY'S OPTION · ${w.typeLabel||w.type}</p><article class="detail-card">${w.demo_gif_url?`<img class="workout-demo" src="${w.demo_gif_url}" alt="${esc(w.title)} 动作动图">`:''}<div class="detail-meta"><span class="tag">${w.duration}</span><span class="tag coral">${w.intensity_level||w.intensity}强度</span><span class="tag sage">${w.equipment}</span></div><h1>${w.title}</h1><p>${w.desc}</p>${w.muscle_group?`<div class="action-meta"><strong>训练类型：</strong>${w.typeLabel}<br><strong>目标肌群：</strong>${w.muscle_group.join('、')}<br><strong>器械：</strong>${w.equipment_required.join('、')}<br><strong>时长范围：</strong>${w.duration_range.join(' - ')} 分钟</div>`:''}<h2 class="section-title">今天会做什么</h2><ol class="steps">${w.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>${w.deload?`<div class="deload-note"><strong>如果今天需要降载：</strong>${w.deload}</div>`:''}<div class="safety-note"><strong>安全提醒：</strong>${w.safe}</div>${relatedActions.length?`<section class="mini-library"><div class="section-head"><h2 class="section-title">动作说明</h2><button class="text-button" data-action="go" data-screen="library">动作库 →</button></div>${relatedActions.map(a=>`<button class="action-chip" data-action="open-action" data-id="${a.id}">${a.name}<span>${a.category}</span></button>`).join('')}</section>`:''}${related.length?`<section class="recommend-video"><h2 class="section-title">查看视频跟练</h2><div class="media-list">${related.map(v=>videoCard(v,true)).join('')}</div></section>`:''}<button class="button button-primary" data-action="complete-workout">完成训练，留下反馈</button><button class="button button-quiet" data-action="result">换一个训练</button></article>`)}
 function strengthLogger(w){const show=regular(read(STORAGE_KEYS.USER_PROFILE,{}))||['Push','Pull','Legs'].includes(w.type);if(!show)return '';const rows=state.strength.exercises.map((x,i)=>`<div class="exercise-row"><div class="row-between"><strong>动作 ${i+1}</strong>${state.strength.exercises.length>1?`<button type="button" class="text-button" data-action="remove-exercise" data-index="${i}">移除</button>`:''}</div><input data-strength="name" data-index="${i}" value="${esc(x.name)}" placeholder="动作名称，例如哑铃卧推"><div class="input-grid">${['weight','reps','sets','rpe'].map(k=>`<input data-strength="${k}" data-index="${i}" inputmode="decimal" value="${esc(x[k])}" placeholder="${{weight:'重量 kg',reps:'次数 reps',sets:'组数 sets',rpe:'RPE 可选'}[k]}">`).join('')}</div></div>`).join('');return `<section class="strength-logger"><p class="eyebrow">OPTIONAL STRENGTH LOG</p><h2 class="section-title">记录重量与组数</h2><p class="tiny">适合 Push / Pull / Legs 或规律力量训练。留空也可以正常保存反馈。</p>${input('训练时长（分钟）','strengthDuration',state.strength.durationMinutes||w.minutes,'number')}${rows}<button type="button" class="button button-secondary small" data-action="add-exercise">+ 添加一个动作</button></section>`}
 function feedback(){const w=workoutLibraryV2.find(x=>x.id===state.workoutId);if(!w){state.screen='result';return render()}const fields=[['completion','今天是否完成？',['完成','完成一部分','没有完成']],['afterFeeling','训练后感觉？',['更有精神','正常','更累','有不适']],['recommendationAccuracy','这个推荐准吗？',['很准','还可以','不太准']]];shell(`${header('workout')}<p class="eyebrow">CLOSE THE LOOP</p><h1 class="page-title">做完就很好。<br>听听身体怎么说。</h1><p class="form-intro">${w.title} · ${w.duration}</p><form id="feedback-form">${fields.map(f=>field(f,state.feedback,'feedback')).join('')}<label class="input-field">想补充什么？<span>可选，只保存在本机</span><textarea name="note" rows="4" maxlength="300" placeholder="例如：下蹲时膝盖有点紧，明天想安排散步。">${esc(state.feedback.note||'')}</textarea></label>${strengthLogger(w)}<button class="button button-primary">保存反馈</button></form>`)}
-function recordTabs(){return `<div class="subnav"><button data-action="record-tab" data-tab="state" class="${state.recordTab==='state'?'active':''}">今日状态</button><button data-action="record-tab" data-tab="training" class="${state.recordTab==='training'?'active':''}">训练记录</button><button data-action="record-tab" data-tab="body" class="${state.recordTab==='body'?'active':''}">身体数据</button></div>`}
+function recordTabs(){return `<div class="subnav"><button data-action="record-tab" data-tab="calendar" class="${state.recordTab==='calendar'?'active':''}">日历</button><button data-action="record-tab" data-tab="state" class="${state.recordTab==='state'?'active':''}">今日状态</button><button data-action="record-tab" data-tab="training" class="${state.recordTab==='training'?'active':''}">训练记录</button><button data-action="record-tab" data-tab="body" class="${state.recordTab==='body'?'active':''}">身体数据</button></div>`}
 function records(){const content=state.recordTab==='body'?bodyRecords():state.recordTab==='training'?trainingRecords():stateRecords();shell(`${header()}<p class="eyebrow">YOUR BODY, YOUR PATTERN</p><h1 class="page-title">训练不是每天<br>都一样强。</h1><p class="form-intro">记录不是考核，是帮妳看见自己正在怎样调整和变强。</p>${recordTabs()}${content}`)}
 function stateRecords(){const c=newest(read(STORAGE_KEYS.DAILY_CHECKINS,[]),'date').slice(0,7),w=newest(read(STORAGE_KEYS.WORKOUT_LOGS,[]));if(!c.length)return `<div class="empty">这里会慢慢长出妳的身体记录。<br><button class="text-button" data-action="nav" data-screen="checkin">从今天的 1 分钟打卡开始 →</button></div>`;const complete=w.filter(x=>x.completion==='完成').length,recovery=c.filter(x=>x.dayType==='恢复日').length;return `<section class="record-summary"><div class="metric"><strong>${c.length}</strong><span>最近记录天数</span></div><div class="metric"><strong>${complete}</strong><span>完成训练次数</span></div><div class="metric"><strong>${recovery}</strong><span>恢复日次数</span></div></section><h2 class="section-title">最近 7 天状态</h2><section class="timeline">${c.map(x=>{const l=w.find(i=>i.date===x.date);return `<article class="timeline-item"><div class="date-box">${dateLabel(x.date)}</div><div><h4>${x.dayType} <span class="tag">${x.score} 分</span></h4><p>睡眠${x.sleep} · 精力${x.energy} · 疼痛${x.pain} · ${x.cycleStatus}${l?` · 训练${l.completion}`:''}</p></div></article>`}).join('')}</section>`}
 function trainingRecords(){const s=newest(read(STORAGE_KEYS.STRENGTH_LOGS,[])),w=newest(read(STORAGE_KEYS.WORKOUT_LOGS,[]));return `<section class="section-panel"><h2 class="section-title">力量训练记录</h2><p class="tiny">Push / Pull / Legs 及规律力量训练的重量、次数与组数会显示在这里。</p>${s.length?`<section class="timeline">${s.slice(0,7).map(l=>`<article class="timeline-item"><div class="date-box">${dateLabel(l.date)}</div><div><h4>${esc(l.workoutTitle)} <span class="tag sage">${l.workoutType}</span></h4><p>${l.durationMinutes?`${l.durationMinutes} 分钟 · `:''}${l.exercises.filter(e=>e.name).map(e=>`${e.name}${e.weight?` ${e.weight}kg`:''}${e.reps?` ×${e.reps}`:''}${e.sets?` ×${e.sets}组`:''}`).join('；')||'未填写具体动作'}</p></div></article>`).join('')}</section>`:'<div class="empty">完成一套 Push、Pull、Legs 或规律力量训练后，可以在反馈页记录重量和组数。</div>'}</section><section class="section-panel"><h2 class="section-title">最近训练反馈</h2>${w.length?`<section class="timeline">${w.slice(0,6).map(l=>`<article class="timeline-item"><div class="date-box">${dateLabel(l.date)}</div><div><h4>${esc(l.workoutTitle)}</h4><p>${l.completion} · ${l.afterFeeling} · 推荐${l.recommendationAccuracy}</p></div></article>`).join('')}</section>`:'<p class="tiny">还没有训练反馈。</p>'}</section>`}
@@ -211,15 +211,15 @@ function toUser(){history.replaceState('',document.title,`${location.pathname}${
 function valid(fields,d){const blank=fields.find(f=>f[3]?!(d[f[0]]||[]).length:!d[f[0]]);if(blank){tip(`请先完成「${blank[1].replace('？','')}」`);return false}return true}
 function saveConsentForm(form){const e=form.elements,before=consent(),next={...before,anonymousAnalytics:!!e.anonymousAnalytics.checked,anonymousTrainingFeedback:!!e.anonymousTrainingFeedback.checked,cycleAggregate:!!e.cycleAggregate.checked};saveConsentState(next);const c=consent(),any=c.anonymousAnalytics||c.anonymousTrainingFeedback||c.cycleAggregate;if(any||before.participantId)fireSync(syncConsent(),false);tip('授权设置已保存');render()}
 function saveProductFeedback(form){captureProductFeedback(form);if(!state.productFeedback.type)return tip('请先选择反馈类型');if(!state.productFeedback.satisfaction)return tip('请先选择满意度');const item={id:`pf-${Date.now()}`,date:today(),type:state.productFeedback.type,satisfaction:Number(state.productFeedback.satisfaction),text:state.productFeedback.text||'',shareText:!!state.productFeedback.shareText,createdAt:now()},items=read(STORAGE_KEYS.PRODUCT_FEEDBACKS,[]);items.unshift(item);save(STORAGE_KEYS.PRODUCT_FEEDBACKS,items.slice(0,30));if(item.shareText){const c=consent();if(!c.participantId)saveConsentState(c);fireSync(syncProductFeedback(item),false)}state.productFeedback={type:'',satisfaction:'',text:'',shareText:false};tip('谢谢妳的反馈。妳帮助我们让训练更适合女性的真实生活。');state.screen='privacy';render()}
-function saveProfile(form){captureProfile(form);if(!valid(profileFields,state.profile))return;const p={...state.profile,activityLevel:state.profile.trainingLevel,createdAt:read(STORAGE_KEYS.USER_PROFILE,{}).createdAt||now(),updatedAt:now()};save(STORAGE_KEYS.USER_PROFILE,p);state.profile=p;eventLog('profile.saved','0.3 training context saved');state.screen='checkin';tip('基础设置已保存在本机');render()}
+function saveProfile(form){captureProfile(form);if(!valid(profileFields,state.profile))return;const p={...state.profile,activityLevel:state.profile.trainingLevel,createdAt:read(STORAGE_KEYS.USER_PROFILE,{}).createdAt||now(),updatedAt:now()};save(STORAGE_KEYS.USER_PROFILE,p);state.profile=p;eventLog('profile.saved','0.2 training context saved');state.screen='checkin';tip('基础设置已保存在本机');render()}
 function saveCheckin(){if(!valid(checkinFields,state.checkin))return;const p=read(STORAGE_KEYS.USER_PROFILE,{}),r=calculateRecommendation(state.checkin,p),x={date:today(),...state.checkin,score:r.score,dayType:r.dayType,phase:r.phase.phase,createdAt:now()},a=read(STORAGE_KEYS.DAILY_CHECKINS,[]).filter(i=>i.date!==x.date);a.unshift(x);save(STORAGE_KEYS.DAILY_CHECKINS,a);state.last={...r,workouts:chooseWorkouts(p,r),checkin:x};eventLog('checkin.completed');eventLog('recommendation.created',`${r.dayType} · ${r.phase.phase}`);state.screen='result';render()}
 function saveFeedback(form){captureFeedback(form);if(['completion','afterFeeling','recommendationAccuracy'].some(k=>!state.feedback[k]))return tip('请先完成这 3 项反馈');const w=workoutLibraryV2.find(x=>x.id===state.workoutId),result=state.last||latest(),log={date:today(),workoutId:w.id,workoutTitle:w.title,workoutType:w.typeLabel||w.type,completion:state.feedback.completion,afterFeeling:state.feedback.afterFeeling,recommendationAccuracy:state.feedback.recommendationAccuracy,note:state.feedback.note||'',createdAt:now()},logs=read(STORAGE_KEYS.WORKOUT_LOGS,[]).filter(x=>!(x.date===log.date&&x.workoutId===log.workoutId));logs.unshift(log);save(STORAGE_KEYS.WORKOUT_LOGS,logs);if(form.elements.strengthDuration)state.strength.durationMinutes=form.elements.strengthDuration.value;const has=state.strength.exercises.some(x=>x.name.trim())||state.strength.durationMinutes;if(has){const l={date:today(),workoutTitle:w.title,workoutType:w.typeLabel||w.type,durationMinutes:state.strength.durationMinutes,exercises:state.strength.exercises.filter(x=>Object.values(x).some(v=>String(v).trim())),note:state.strength.note||'',createdAt:now()},a=read(STORAGE_KEYS.STRENGTH_LOGS,[]).filter(x=>!(x.date===l.date&&x.workoutTitle===l.workoutTitle));a.unshift(l);save(STORAGE_KEYS.STRENGTH_LOGS,a)}eventLog('workout.feedback_saved',`${w.id} · ${log.completion}`);fireSync(syncTrainingFeedback(log,w,result));state.screen='records';state.recordTab=has?'training':'state';tip('已保存。妳正在建立自己的训练节奏。');render()}
 function saveMetric(form){const e=form.elements,has=['weight','waist','hip','thigh','sleepHours'].some(k=>e[k].value);if(!has)return tip('至少填写一项身体数据再保存');const x={date:today(),weight:e.weight.value,waist:e.waist.value,hip:e.hip.value,thigh:e.thigh.value,sleepHours:e.sleepHours.value,note:e.note.value.trim(),createdAt:now()},a=read(STORAGE_KEYS.BODY_METRICS,[]).filter(i=>i.date!==x.date);a.unshift(x);save(STORAGE_KEYS.BODY_METRICS,a);eventLog('body_metric.saved','body metric log saved');tip('身体数据已保存在本机');render()}
 app.addEventListener('input',e=>{const t=e.target;if(t.dataset.strength){const i=Number(t.dataset.index);state.strength.exercises[i][t.dataset.strength]=t.value}if(t.name==='note'&&t.closest('#feedback-form'))state.feedback.note=t.value;if(t.closest('#product-feedback-form'))captureProductFeedback()});
 app.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;
- if(a==='pick'){if(b.dataset.kind==='profile')captureProfile();if(b.dataset.kind==='feedback')captureFeedback();const d=b.dataset.kind==='profile'?state.profile:b.dataset.kind==='checkin'?state.checkin:state.feedback,k=b.dataset.field,v=b.dataset.value,f=[...profileFields,...checkinFields].find(x=>x[0]===k);if(f?.[3]){const old=d[k]||[];if(!old.includes(v)&&old.length>=3)return tip('训练目标最多选择 3 项');d[k]=old.includes(v)?old.filter(x=>x!==v):[...old,v]}else d[k]=v;return render()}
+ if(a==='pick'){if(b.dataset.kind==='profile')captureProfile();if(b.dataset.kind==='feedback')captureFeedback();const d=b.dataset.kind==='profile'?state.profile:b.dataset.kind==='checkin'?state.checkin:state.feedback,k=b.dataset.field,v=b.dataset.value,f=[...profileFields,...checkinFields].find(x=>x[0]===k);if(f?.[3]){const old=Array.isArray(d[k])?d[k]:(d[k]?[d[k]]:[]);if(k==='goals'&&!old.includes(v)&&old.length>=3)return tip('训练目标最多选择 3 项');d[k]=old.includes(v)?old.filter(x=>x!==v):[...old,v]}else d[k]=v;return render()}
  if(a==='product-pick'){captureProductFeedback();state.productFeedback[b.dataset.field]=b.dataset.value;return render()}
- if(a==='cycle-day'){if(state.suppressClick){state.suppressClick=false;return}toggleCycleDay(b.dataset.date);render()}
+ if(a==='cycle-day'){if(state.suppressClick){state.suppressClick=false;return}const res=handleCycleDayTap(b.dataset.date);render();if(res&&res.newStart&&state.screen==='cycle')maybeCelebratePeriod(res.newStart)}
  if(a==='phase-highlight'){state.selectedPhase=b.dataset.phase;render()}
  if(a==='phase-current'){state.selectedPhase=null;render()}
  if(a==='cycle-prev'){shiftCalendarMonth(-1);render()}
@@ -254,7 +254,7 @@ window.addEventListener('pointerup',()=>{state.suppressClick=state.dragMoved;sta
 app.addEventListener('submit',e=>{e.preventDefault();const f=e.target;if(f.id==='profile-form')saveProfile(f);if(f.id==='checkin-form')saveCheckin();if(f.id==='feedback-form')saveFeedback(f);if(f.id==='body-form')saveMetric(f);if(f.id==='privacy-consent-form')saveConsentForm(f);if(f.id==='product-feedback-form')saveProductFeedback(f);if(f.id==='cycle-setup-form')saveCycleProfile(f);if(f.id==='admin-login')adminLoginSubmit(f)});
 window.addEventListener('hashchange',()=>{state.mode=location.hash==='#/admin'?'admin':'user';render()});
 /* NVXUN_V03 */
-// 0.3 keeps the existing flow and calendar, while adding an explicit cycle profile.
+// 0.3 keeps the existing 0.2 flow and calendar, while adding an explicit cycle profile.
 STORAGE_KEYS.CYCLE_PROFILE='nvxun_cycleProfile';
 EVENT_UPLOAD_MAP['cycle.profile.completed']='cycle_profile_completed';
 EVENT_UPLOAD_MAP['product.feedback.opened']='product_feedback_opened';
@@ -270,7 +270,7 @@ function syncConsent(){if(!apiReady())return Promise.resolve({mode:'local-demo'}
 function phaseForUpload(result){const c=consent();if(!c.cycleAggregate)return null;const phase=result&&result.cycleEstimate&&result.cycleEstimate.phaseKey||result&&result.phase&&result.phase.phaseKey||result&&result.phase&&result.phase.current_phase;return ['menstrual','follicular','ovulation','luteal','premenstrual','unknown'].includes(phase)?phase:null}
 function syncTrainingFeedback(log,w,result){if(!apiReady())return Promise.resolve({mode:'local-demo'});const c=consent();if(!c.anonymousTrainingFeedback||!c.participantId)return Promise.resolve();const payload={participantId:c.participantId,consentVersion:c.version,submittedDate:today(),completion:log.completion,afterFeeling:log.afterFeeling,recommendationAccuracy:log.recommendationAccuracy,dayType:result&&result.dayType||'',workoutType:w.typeLabel||w.type},phase=phaseForUpload(result);if(phase)payload.cyclePhase=phase;return postApi('/v1/training-feedback',payload)}
 function syncProductFeedback(item){if(!apiReady())return Promise.resolve({mode:'local-demo'});const c=consent();if(!item.shareText||!c.participantId)return Promise.resolve();return postApi('/v1/product-feedback',{participantId:c.participantId,consentVersion:c.version,submittedDate:today(),feedbackType:item.type,satisfaction:Number(item.satisfaction),text:item.text.trim(),textConsent:true})}
-function needsCycleProfile(profile){return ['有规律月经','有月经，但不太规律','经前反应明显'].includes(profile&&profile.bodyStage)}
+function needsCycleProfile(profile){const bs=profile&&profile.bodyStage,arr=Array.isArray(bs)?bs:(bs?[bs]:[]);return arr.some(s=>['有规律月经','有月经，但不太规律','经前反应明显'].includes(s))}
 function hasCycleProfile(){const cp=read(STORAGE_KEYS.CYCLE_PROFILE,null);return !!(cp&&cp.lastPeriodStartDate&&cp.averageCycleLength&&cp.averagePeriodLength)}
 function cycleProfile(){return read(STORAGE_KEYS.CYCLE_PROFILE,null)}
 function cleanCycleDates(value){return [...new Set((Array.isArray(value)?value:String(value||'').split(/[\n,，\s]+/)).map(x=>String(x).trim()).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)&&x<=today()))].sort()}
@@ -311,7 +311,7 @@ function privacy(){const c=consent(),local=getSyncMode()==='local-demo',status=l
 function saveConsentForm(form){const e=form.elements,before=consent(),next={...before,anonymousAnalytics:!!e.anonymousAnalytics.checked,anonymousTrainingFeedback:!!e.anonymousTrainingFeedback.checked,cycleAggregate:!!e.cycleAggregate.checked};saveConsentState(next);const c=consent(),shouldTryCloud=apiReady()&&(c.anonymousAnalytics||c.anonymousTrainingFeedback||c.cycleAggregate||before.participantId);if(shouldTryCloud){fireSync(syncConsent,false);tip('授权设置已保存，正在同步匿名测试设置。')}else syncSaveTipOnConsentSaved();render()}
 function productFeedback(){if(state.productFeedbackTrackedDate!==today()){state.productFeedbackTrackedDate=today();eventLog('product.feedback.opened')}const f=state.productFeedback,types=['使用问题','推荐体验','功能建议','内容建议','其她'];shell(header('privacy')+'<p class="eyebrow">HELP US IMPROVE</p><h1 class="page-title">妳的感受，<br>会让女训更贴近真实生活。</h1><p class="form-intro">这里不需要姓名、手机号、邮箱或登录。文字反馈默认只保存在本机。</p><form id="product-feedback-form" class="product-feedback-form"><fieldset class="question"><legend>反馈类型</legend><div class="choice-grid two">'+types.map(v=>'<button type="button" class="choice '+(f.type===v?'selected':'')+'" data-action="product-pick" data-field="type" data-value="'+v+'"><span class="dot"></span>'+v+'</button>').join('')+'</div></fieldset><fieldset class="question"><legend>满意度</legend><div class="rating-row">'+[1,2,3,4,5].map(v=>'<button type="button" class="rating-button '+(Number(f.satisfaction)===v?'selected':'')+'" data-action="product-pick" data-field="satisfaction" data-value="'+v+'" aria-label="'+v+' 分">'+v+'</button>').join('')+'</div></fieldset><label class="input-field">文字反馈（可选）<span>最多 500 字；未单独授权时只保存在本机。</span><textarea name="productText" rows="5" maxlength="500" placeholder="例如：哪个步骤不清楚、推荐哪里不贴合、希望增加什么内容。">'+esc(f.text||'')+'</textarea></label><label class="consent-toggle product-text-consent"><input type="checkbox" name="shareText" '+(f.shareText?'checked':'')+'><span><strong>我同意将这条文字反馈匿名提交给女训测试团队，用于产品改进。</strong><small>每一条文字反馈都需要单独勾选。其她匿名授权不会自动上传文字。</small></span></label><button class="button button-primary">提交反馈</button></form>')}
 function saveProductFeedback(form){captureProductFeedback(form);if(!state.productFeedback.type)return tip('请先选择反馈类型');if(!state.productFeedback.satisfaction)return tip('请先选择满意度');const item={id:'pf-'+Date.now(),date:today(),type:state.productFeedback.type,satisfaction:Number(state.productFeedback.satisfaction),text:state.productFeedback.text||'',shareText:!!state.productFeedback.shareText,createdAt:now()},items=read(STORAGE_KEYS.PRODUCT_FEEDBACKS,[]);items.unshift(item);save(STORAGE_KEYS.PRODUCT_FEEDBACKS,items.slice(0,30));if(item.shareText&&apiReady()){const c=consent();if(!c.participantId)saveConsentState(c);fireSync(()=>syncProductFeedback(item),false);tip('反馈已保存在本机，正在同步已单独授权的文字反馈。')}else if(!apiReady())tip('当前为本机演示模式，反馈已保存在妳的浏览器。');else tip('反馈已保存在本机；未勾选文字授权时不会上传。');state.productFeedback={type:'',satisfaction:'',text:'',shareText:false};state.screen='privacy';render()}
-function records(){const content=state.recordTab==='body'?bodyRecords():state.recordTab==='training'?trainingRecords():stateRecords();shell(header()+'<p class="eyebrow">YOUR BODY, YOUR PATTERN</p><h1 class="page-title">训练不是每天<br>都一样强。</h1><p class="form-intro">记录不是考核，是帮妳看见自己正在怎样调整和变强。</p>'+recordTabs()+content+'<button class="button button-secondary feedback-entry" data-action="go" data-screen="product-feedback">反馈使用体验</button>')}
+function records(){const content=state.recordTab==='calendar'?calendarRecords():state.recordTab==='body'?bodyRecords():state.recordTab==='training'?trainingRecords():stateRecords();shell(header()+'<p class="eyebrow">YOUR BODY, YOUR PATTERN</p><h1 class="page-title">训练不是每天<br>都一样强。</h1><p class="form-intro">记录不是考核，是帮妳看见自己正在怎样调整和变强。</p>'+recordTabs()+content+'<button class="button button-secondary feedback-entry" data-action="go" data-screen="product-feedback">反馈使用体验</button>')}
 function cycle(){if(state.cycleTrackedDate!==today()){eventLog('cycle.viewed');state.cycleTrackedDate=today()}const cp=cycleProfile(),estimate=estimateCyclePhaseFromProfile(cp,today(),read(STORAGE_KEYS.USER_PROFILE,{})),days=menstruationDays(),selected=new Set(days),episodes=deriveEpisodes(days),model=cycleModel(days),displayKey=['menstrual','follicular','ovulation','luteal'].includes(estimate.phaseKey)?estimate.phaseKey:estimate.phaseKey==='premenstrual'?'luteal':null,display=displayKey?PHASES[displayKey]:null,monthTitle=state.calendarMonth.replace('-','年')+'月';const profileCard=cp?'<section class="cycle-profile-summary"><div><span>末次月经开始日期</span><b>'+esc(cp.lastPeriodStartDate)+'</b></div><div><span>平均周期长度</span><b>'+esc(cp.averageCycleLength)+' 天</b></div><div><span>平均经期长度</span><b>'+esc(cp.averagePeriodLength)+' 天</b></div></section>':'<section class="callout"><strong>还没有周期档案。</strong> 妳可以先补充信息，让训练建议多一个节律参考。</section>';const analysis='<section class="cycle-health-card cycle-analysis '+(!display?'is-unknown':'')+'"><div><span class="tiny">基于妳填写的信息推算 · 仅供训练参考，不代表真实激素检测</span><h2>'+esc(estimate.phaseLabel)+'</h2><p>'+esc(estimate.explanation)+'</p></div><strong style="--phase:'+(display?display.color:'#b9abb2')+'">'+(estimate.cycleDay?'第 '+estimate.cycleDay+' 天':'--')+'</strong></section>';const metrics='<section class="cycle-metrics"><article><span>预计周期阶段</span><b>'+esc(estimate.phase)+'</b><em>可信度 '+esc(estimate.confidence)+'</em></article><article><span>距离预计下次月经</span><b>'+(Number.isFinite(estimate.daysToNextPeriod)?estimate.daysToNextPeriod:'--')+'</b><em>天</em></article><article><span>训练提示</span><b>'+esc(estimate.trainingHint)+'</b><em>以今日状态为准</em></article></section>';const calendar='<section class="cycle-calendar"><div class="calendar-head"><button class="icon-button" data-action="cycle-prev" aria-label="上个月">‹</button><strong>'+monthTitle+'</strong><button class="icon-button" data-action="cycle-next" aria-label="下个月">›</button></div><div class="week-row">'+['日','一','二','三','四','五','六'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="month-grid">'+monthDays().map(d=>{const on=selected.has(d.iso),ep=episodes.find(x=>daysBetween(x.start_date,d.iso)>=0&&daysBetween(d.iso,x.end_date)>=0),start=ep&&ep.start_date===d.iso,end=ep&&ep.end_date===d.iso;return '<button class="day-cell '+(d.inMonth?'':'muted-day ') +(on?'selected ':'')+(ep?'in-period ':'')+(start?'period-start ':'')+(end?'period-end ':'')+'" data-action="cycle-day" data-date="'+d.iso+'" aria-pressed="'+on+'"><span>'+d.day+'</span></button>'}).join('')+'</div><p class="calendar-hint">点击日期可补充经期记录。周期档案优先用于推算；日历记录会继续保存在本机。</p></section>';const ring=display?phaseWheel(displayKey,state.selectedPhase||displayKey):'';shell(header()+'<p class="eyebrow">CYCLE INSIGHT</p><h1 class="page-title">记录经期，<br>让训练更懂节律。</h1><p class="form-intro">周期阶段为基于妳填写的信息推算，仅供训练参考，不代表真实激素检测。</p>'+profileCard+'<button class="button button-secondary" data-action="go" data-screen="cycle-setup">更新周期信息</button>'+analysis+metrics+(estimate.phaseKey==='premenstrual'?'<p class="premenstrual-note">经前 5 天：在黄体期后段更重视恢复和主观感受。</p>':'')+calendar+ring+'<section class="episode-list"><h2 class="section-title">已识别经期区间</h2>'+(episodes.length?episodes.slice().reverse().slice(0,5).map(e=>'<div class="episode-row"><span>'+dateLabel(e.start_date)+' - '+dateLabel(e.end_date)+'</span><strong>'+ (daysBetween(e.start_date,e.end_date)+1)+' 天</strong></div>').join(''):'<p class="empty-small">可以继续用日历补充经期日期；记录越完整，估算越稳定。</p>')+'</section>')}
 function latest(){const records=newest(read(STORAGE_KEYS.DAILY_CHECKINS,[]),'date'),checkin=records.find(x=>x.date===today())||records[0];if(!checkin)return null;const p=read(STORAGE_KEYS.USER_PROFILE,{}),r=calculateRecommendation({checkin,profile:p,cycleProfile:cycleProfile()});return {...r,score:checkin.score??r.score,dayType:checkin.dayType||r.dayType,workouts:chooseWorkouts(p,r),checkin}}
 function render(){if(state.mode==='admin'){admin();return wireRingFallback()}const f={welcome,profile,'cycle-setup':cycleSetup,checkin,result,workout,feedback,cycle,records,library,action:movement,videos:videoLibrary,privacy,productFeedback,'product-feedback':productFeedback}[state.screen]||welcome;f();wireRingFallback()}
@@ -350,8 +350,8 @@ function saveVideoReport(form){const id=state.videoReportId;const reason=(form.q
 function adminVideoBtns(v){const btn=(s,l)=>'<button type="button" class="button button-quiet small" data-action="video-admin" data-id="'+esc(v.id)+'" data-status="'+s+'">'+l+'</button>';return btn('approved','通过/恢复')+btn('hidden','隐藏')+btn('rejected','拒绝')}
 function adminVideoRow(v){return '<tr><td>'+esc(v.title)+'</td><td>'+esc(v.creator||'')+'</td><td>'+esc(v.platform||'')+'</td><td><a href="'+esc(v.url)+'" target="_blank" rel="noopener">链接</a></td><td>'+esc(v.category||'')+'</td><td>'+esc(v.relatedActionName||'')+'</td><td>'+(v.clickCount||0)+'</td><td>'+(v.recommendCount||0)+'</td><td>'+(v.uncomfortableCount||0)+'</td><td>'+(v.reportCount||0)+'</td><td>'+esc(v.status||'')+'</td><td>'+adminVideoBtns(v)+'</td></tr>'}
 function adminVideos(){const all=allVideoItems();const pending=all.filter(v=>v.status==='pending');const reported=all.filter(v=>videoUnderReview(v)||(v.uncomfortableCount||0)>=3);const head='<thead><tr><th>标题</th><th>创作者</th><th>平台</th><th>链接</th><th>分类</th><th>相关动作</th><th>点击</th><th>推荐</th><th>不适</th><th>举报</th><th>状态</th><th>操作</th></tr></thead>';const note=!apiReady()?'<div class="callout">当前为本机演示模式，视频审核数据仅保存在本浏览器。</div>':'';const t=(title,rows)=>'<section class="admin-card"><h2>'+title+'（'+rows.length+'）</h2>'+(rows.length?'<div class="table-wrap"><table>'+head+'<tbody>'+rows.map(adminVideoRow).join('')+'</tbody></table></div>':'<p class="muted">暂无。</p>')+'</section>';return '<p class="eyebrow">VIDEO REVIEW</p><h1 class="page-title">视频审核</h1>'+note+t('待审核（用户提交）',pending)+t('被反馈不合适 / 待复核',reported)+t('全部视频',all)}
-function adminLocalShell(body){app.innerHTML='<section class="admin-shell"><header class="admin-topbar"><div><div class="brand admin-brand"><span class="brand-mark">力</span>女训 <span class="tag">视频审核</span></div><p>本机演示模式：仅可在本浏览器审核视频推荐，不读取个人原始记录。</p></div><button class="button button-secondary small" data-action="admin-logout">回到女训前台</button></header><nav class="admin-nav"><button class="active" data-action="admin-tab" data-tab="videos">视频审核</button></nav>'+body+'</section>'}
-function admin(){safeLocalStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);if(!apiReady()){state.adminTab='videos';return adminLocalShell(adminVideos())}if(!state.adminToken)return adminLogin();const tabs=[['overview','概览'],['training','推荐与训练反馈'],['cycle','周期阶段汇总'],['product','产品反馈'],['videos','视频审核'],['privacy','数据与隐私']];const isVideo=state.adminTab==='videos';const body=isVideo?adminVideos():(state.adminLoading&&!state.adminSummary?'<section class="admin-card"><p class="muted">正在加载匿名测试汇总…</p></section>':{overview:adminOverview,training:adminTraining,cycle:adminCycle,product:adminProduct,privacy:adminPrivacy}[state.adminTab]());app.innerHTML='<section class="admin-shell"><header class="admin-topbar"><div><div class="brand admin-brand"><span class="brand-mark">力</span>女训 <span class="tag">匿名测试后台</span></div><p>只统计已授权的匿名测试数据。不会显示原始经期记录、身体围度、体重、力量训练重量、设备 ID 或浏览器信息。</p></div><button class="button button-secondary small" data-action="admin-logout">退出后台</button></header><nav class="admin-nav">'+tabs.map(([k,l])=>'<button class="'+(state.adminTab===k?'active':'')+'" data-action="admin-tab" data-tab="'+k+'">'+l+'</button>').join('')+'</nav>'+(isVideo?'':'<div class="admin-range"><button class="'+(state.adminRange==='7d'?'active':'')+'" data-action="admin-range" data-range="7d">近 7 天</button><button class="'+(state.adminRange==='30d'?'active':'')+'" data-action="admin-range" data-range="30d">近 30 天</button><button class="'+(state.adminRange==='all'?'active':'')+'" data-action="admin-range" data-range="all">全部</button></div>')+(state.adminError?'<div class="callout warning">'+state.adminError+'</div>':'')+body+'</section>';if(!isVideo&&!state.adminSummary&&!state.adminLoading&&!state.adminError)loadAdminData()}
+function adminLocalShell(body){app.innerHTML='<section class="admin-shell"><header class="admin-topbar"><div><div class="brand admin-brand"><span class="brand-mark">力</span>女训 NüFit <span class="tag">视频审核</span></div><p>本机演示模式：仅可在本浏览器审核视频推荐，不读取个人原始记录。</p></div><button class="button button-secondary small" data-action="admin-logout">回到女训前台</button></header><nav class="admin-nav"><button class="active" data-action="admin-tab" data-tab="videos">视频审核</button></nav>'+body+'</section>'}
+function admin(){safeLocalStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);if(!apiReady()){state.adminTab='videos';return adminLocalShell(adminVideos())}if(!state.adminToken)return adminLogin();const tabs=[['overview','概览'],['training','推荐与训练反馈'],['cycle','周期阶段汇总'],['product','产品反馈'],['videos','视频审核'],['privacy','数据与隐私']];const isVideo=state.adminTab==='videos';const body=isVideo?adminVideos():(state.adminLoading&&!state.adminSummary?'<section class="admin-card"><p class="muted">正在加载匿名测试汇总…</p></section>':{overview:adminOverview,training:adminTraining,cycle:adminCycle,product:adminProduct,privacy:adminPrivacy}[state.adminTab]());app.innerHTML='<section class="admin-shell"><header class="admin-topbar"><div><div class="brand admin-brand"><span class="brand-mark">力</span>女训 NüFit <span class="tag">匿名测试后台</span></div><p>只统计已授权的匿名测试数据。不会显示原始经期记录、身体围度、体重、力量训练重量、设备 ID 或浏览器信息。</p></div><button class="button button-secondary small" data-action="admin-logout">退出后台</button></header><nav class="admin-nav">'+tabs.map(([k,l])=>'<button class="'+(state.adminTab===k?'active':'')+'" data-action="admin-tab" data-tab="'+k+'">'+l+'</button>').join('')+'</nav>'+(isVideo?'':'<div class="admin-range"><button class="'+(state.adminRange==='7d'?'active':'')+'" data-action="admin-range" data-range="7d">近 7 天</button><button class="'+(state.adminRange==='30d'?'active':'')+'" data-action="admin-range" data-range="30d">近 30 天</button><button class="'+(state.adminRange==='all'?'active':'')+'" data-action="admin-range" data-range="all">全部</button></div>')+(state.adminError?'<div class="callout warning">'+state.adminError+'</div>':'')+body+'</section>';if(!isVideo&&!state.adminSummary&&!state.adminLoading&&!state.adminError)loadAdminData()}
 function movement(){const a=actions.find(x=>x.id===state.actionId);if(!a){state.screen='library';return render()}const related=visibleVideoItems().filter(v=>v.relatedActionId===a.id||(v.suitableFor||[]).includes(a.name)||(v.title||'').includes(a.name));const relatedHtml='<section class="recommend-video"><h2 class="section-title">对应跟练视频</h2>'+(related.length?'<div class="media-list">'+related.map(v=>videoCard(v,true)).join('')+'</div>':'<p class="empty-small">暂无对应跟练视频。妳可以在视频页推荐一个。</p>')+'</section>';shell(header('back-library')+'<p class="eyebrow">MOVEMENT GUIDE · '+esc(a.category)+'</p><article class="detail-card"><span class="tag">'+esc(a.difficulty)+'</span><h1>'+esc(a.name)+'</h1><p>'+esc(a.description)+'</p><div class="action-meta"><strong>训练部位：</strong>'+a.targetMuscles.join('、')+'<br><strong>适合：</strong>'+esc(a.suitable)+'</div><h2 class="section-title">动作步骤</h2><ol class="steps">'+a.steps.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol><section class="mistake-card"><h2 class="section-title">常见错误</h2><ul>'+a.mistakes.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></section><div class="safety-note"><strong>安全提示：</strong>'+esc(a.safety)+'</div>'+relatedHtml+'<button class="button button-secondary" data-action="go" data-screen="videos">查看全部视频跟练资源</button></article>')}
 // 经期日历首填：去掉手动数字录入，改为日历轻点/滑选；季经年经可跳过；记录过一次后不再强制
 function hasCycleProfile(){const cp=read(STORAGE_KEYS.CYCLE_PROFILE,null);if(cp&&(cp.skipped||cp.lastPeriodStartDate))return true;return menstruationDays().length>=1}
@@ -379,7 +379,7 @@ app.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b
  if(a==='video-recommend'){const id=b.dataset.id;if(videoRecommendedByMe(id)){tip('妳已经推荐过这个视频啦。');return}const st=videoStat(id),base=allVideoItems().find(x=>x.id===id)||{sourceType:'official'};bumpVideo(id,{sourceType:base.sourceType||'official',recommendCount:(st.recommendCount||0)+1,recommendedByMe:true},base.sourceType==='user_submitted'?base:{sourceType:'official'});eventLog('video.recommended',id);tip('谢谢妳的推荐，会让更多姐妹看到这条好内容。');render()}
  if(a==='video-report'){state.videoReportId=b.dataset.id;state.screen='video-report';render()}
  if(a==='video-admin'){const id=b.dataset.id,status=b.dataset.status,base=allVideoItems().find(x=>x.id===id)||{sourceType:'official'};bumpVideo(id,{sourceType:base.sourceType||'official',status},base.sourceType==='user_submitted'?base:{sourceType:'official'});render()}
- if(a==='cycle-setup-done'){const ds=menstruationDays();if(!ds.length)return tip('先在日历上点出至少一天经期，或选择“先跳过”。');const model=cycleModel(ds);const cp={lastPeriodStartDate:model.last_start_date,averageCycleLength:model.cycle_length_days,averagePeriodLength:model.period_length_days,regularity:model.status==='stable'?'比较规律':'有点波动',periodStartDates:model.recent.map(x=>x.start_date),source:'calendar',updatedAt:now()};save(STORAGE_KEYS.CYCLE_PROFILE,cp);eventLog('cycle.profile.completed');state.screen='checkin';tip('经期记录已保存在本机，接下来看看今天适合怎么练。');render()}
+ if(a==='cycle-setup-done'){const ds=menstruationDays();if(!ds.length)return tip('先在日历上点出至少一天经期，或选择“先跳过”。');const model=cycleModel(ds);const cp={lastPeriodStartDate:model.last_start_date,averageCycleLength:model.cycle_length_days,averagePeriodLength:model.period_length_days,regularity:model.status==='stable'?'比较规律':'有点波动',periodStartDates:model.recent.map(x=>x.start_date),source:'calendar',updatedAt:now()};save(STORAGE_KEYS.CYCLE_PROFILE,cp);eventLog('cycle.profile.completed');state.screen='checkin';tip('经期记录已保存在本机，接下来看看今天适合怎么练。');render();maybeCelebratePeriod(model.last_start_date)}
  if(a==='cycle-setup-skip'){save(STORAGE_KEYS.CYCLE_PROFILE,{skipped:true,regularity:'不确定',source:'skip',updatedAt:now()});eventLog('cycle.profile.completed');state.screen='checkin';tip('已跳过经期填写。今天会主要根据妳的状态来安排训练。');render()}
 });
 app.addEventListener('submit',e=>{const f=e.target;if(f.id==='video-submit-form'){e.preventDefault();saveVideoSubmit(f)}if(f.id==='video-report-form'){e.preventDefault();saveVideoReport(f)}});
@@ -436,11 +436,13 @@ function library(){const tab=state.libraryTab==='actions'?'actions':'workouts';
 
 /* ---- 视频专区重构 ---- */
 function videoRecommendedByMe(id){const s=videoStore()[id];return !!(s&&s.recommendedByMe)}
-function videoCard(v,compact){const st=videoStat(v.id);if(st.status==='hidden'||st.status==='rejected'||st.uncomfortableCount>=3)return '';const flag=videoUnderReview({uncomfortableCount:st.uncomfortableCount,reportCount:st.reportCount})?'<span class="tag warn">待复核</span>':'';
+function videoCard(v,compact){const st=videoStat(v.id);if(st.status==='hidden'||st.status==='rejected'||st.uncomfortableCount>=3)return '';
+ if((state.dismissedVideoIds||[]).includes(v.id))return '<article class="media-card video-card dismissed'+(compact?' compact':'')+'"><h3>'+esc(v.title)+'</h3><p class="tiny">已取消推荐，不再为妳显示这条。</p><button type="button" class="button button-quiet small" data-action="toggle-video-rec" data-id="'+esc(v.id)+'" aria-label="恢复推荐">恢复推荐</button></article>';
+ const flag=videoUnderReview({uncomfortableCount:st.uncomfortableCount,reportCount:st.reportCount})?'<span class="tag warn">待复核</span>':'';
  const fitList=(v.suitableFor&&v.suitableFor.length?v.suitableFor:[v.category]).filter(Boolean),fit=fitList.slice(0,3).join('、'),chips=fitList.slice(0,2);
  const done=videoRecommendedByMe(v.id);
  const recBtn=done?'<button type="button" class="button btn-positive small is-recommended" disabled aria-label="已推荐">✓ 已推荐</button>':'<button type="button" class="button btn-positive small" data-action="video-recommend" data-id="'+esc(v.id)+'" aria-label="推荐这个视频">👍 推荐这个视频</button>';
- return '<article class="media-card video-card'+(compact?' compact':'')+'">'+flag+'<h3>'+esc(v.title)+'</h3><p class="media-creator">'+esc(v.creator||'未知')+'<span class="src-sub"> · '+esc(v.platform||'')+'</span></p>'+(fit?'<p class="vc-fit">适合'+esc(fit)+'。</p>':'')+'<div class="vc-chips">'+chips.map(c=>'<span class="tag">'+esc(c)+'</span>').join('')+'</div><div class="video-actions"><button type="button" class="button button-secondary small" data-action="video-open" data-id="'+esc(v.id)+'" data-url="'+esc(v.url)+'" aria-label="打开视频">打开视频</button>'+recBtn+'<button type="button" class="button btn-caution small" data-action="video-report" data-id="'+esc(v.id)+'" aria-label="内容不合适">内容不合适</button></div><p class="vc-hint">👍 推荐后，会让更多姐妹看到无身材焦虑的好内容。</p><p class="vc-hint muted">「内容不合适」会降低推荐优先级，并进入人工复核。</p></article>'}
+ return '<article class="media-card video-card'+(compact?' compact':'')+'">'+flag+'<h3>'+esc(v.title)+'</h3><p class="media-creator">'+esc(v.creator||'未知')+'<span class="src-sub"> · '+esc(v.platform||'')+'</span></p>'+(fit?'<p class="vc-fit">适合'+esc(fit)+'。</p>':'')+'<div class="vc-chips">'+chips.map(c=>'<span class="tag">'+esc(c)+'</span>').join('')+'</div><div class="video-actions"><button type="button" class="button button-secondary small" data-action="video-open" data-id="'+esc(v.id)+'" data-url="'+esc(v.url)+'" aria-label="打开视频">打开视频</button>'+recBtn+'<button type="button" class="button btn-caution small" data-action="video-report" data-id="'+esc(v.id)+'" aria-label="内容不合适">内容不合适</button><button type="button" class="button button-quiet small" data-action="toggle-video-rec" data-id="'+esc(v.id)+'" aria-label="不再推荐这条">不再推荐</button></div><p class="vc-hint">👍 推荐后，会让更多姐妹看到无身材焦虑的好内容。</p><p class="vc-hint muted">「不再推荐」只在本机隐藏这条，可随时恢复。</p></article>'}
 function videoLibrary(){if(state.videoTrackedDate!==today()){state.videoTrackedDate=today();eventLog('video.library.opened')}const items=visibleVideoItems(),store=videoStore(),mine=Object.values(store).filter(s=>s&&s.sourceType==='user_submitted');const list=items.length?'<div class="video-grid">'+items.map(v=>videoCard(v)).join('')+'</div>':'<p class="empty-small">暂时没有可展示的视频，欢迎推荐一个妳觉得好用的。</p>';const mineSection=mine.length?'<section class="video-section"><h2 class="section-title">我提交的视频</h2>'+mine.map(s=>'<div class="episode-row"><span>'+esc(s.title)+'</span><strong>'+(s.status==='approved'?'已通过':s.status==='rejected'?'未通过':s.status==='hidden'?'已隐藏':'审核中')+'</strong></div>').join('')+'</section>':'';shell(header()+'<p class="eyebrow">VIDEO FOLLOW-ALONG</p><h1 class="page-title">想有人带着练，<br>也完全没问题。</h1><p class="form-intro attitude">由真实训练者共同筛选：动态排序、人工复核、拒绝身材焦虑。</p><p class="form-subhint">妳的推荐会帮助好内容被更多姐妹看见；不合适的内容会进入人工复核。</p><button class="button button-secondary" data-action="go" data-screen="video-submit" aria-label="推荐一个妳觉得好用的视频">推荐一个妳觉得好用的视频</button><section class="video-section"><h2 class="section-title">为妳排序的跟练视频</h2>'+list+'</section>'+mineSection+VIDEO_DISCLAIMER)}
 
 /* ---- 进阶力量日志（数据仅保存在本机，绝不上传） ---- */
@@ -483,6 +485,362 @@ app.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b
  if(a==='strength-review-toggle'){captureStrengthDraft();state.strengthReview=!state.strengthReview;render()}
  if(a==='strength-save'){saveStrengthLog()}
 });
+
+/* NVXUN_V07 — 循证知识与推荐依据层接入（知识/规则/引擎在 src/ 中，浏览器以全局加载） */
+// 新增"今日可训练时间"打卡项，供引擎决定时长上限；幂等，避免重复 push。
+if(!checkinFields.some(f=>f[0]==='availableTime'))checkinFields.push(['availableTime','今天可训练的时间',['10—15 分钟','20—30 分钟','45 分钟以上','还不确定']]);
+if(!state.variant)state.variant='standard';
+
+// 从最近一次训练反馈中提炼用于下一次推荐微调的信号（纯本机，不依赖远端同步）。
+function latestFeedbackSignal(){
+ const logs=read(STORAGE_KEYS.WORKOUT_LOGS,[]);
+ const last=Array.isArray(logs)&&logs.length?logs[0]:null;
+ if(!last)return {};
+ const prefMap={'希望增加':'increase','保持':'maintain','希望降低':'decrease'};
+ let bodyFeel=null;
+ if(last.afterFeeling==='有不适')bodyFeel='更不舒服';
+ else if(last.afterFeeling==='更有精神')bodyFeel='更好';
+ else if(last.afterFeeling)bodyFeel='没变化';
+ return {nextPreference:prefMap[last.nextPreference]||null,lastIntensityFeel:last.intensityFeel||null,lastBodyFeel:bodyFeel};
+}
+
+// 调用循证引擎，得到强度上限、今日重点、可解释依据、安全与生活方式提示。
+function buildEnriched(profile,recommendation,checkin){
+ if(typeof NvxunEngine==='undefined'||!NvxunEngine)return null;
+ try{return NvxunEngine.evaluate({profile:profile||{},checkin:checkin||{},cycleEstimate:recommendation.cycleEstimate||recommendation.phase,dayType:recommendation.dayType,score:recommendation.score,feedback:latestFeedbackSignal()});}catch(e){return null;}
+}
+
+// 强度档 → 既有 dayType（供 chooseWorkouts 复用全部场景/目标/经验过滤逻辑）。
+function dayTypeForLevel(level){return ['恢复日','降载日','常规日','冲刺日'][Math.max(0,Math.min(3,level))];}
+// 按"标准 / 轻量 / 恢复"三档生成可切换的训练方案，内容真实变化而非仅视觉。
+function variantWorkouts(profile,result,enriched,variant){
+ const baseLevel=enriched?enriched.intensityLevel:({'恢复日':0,'降载日':1,'常规日':2,'冲刺日':3}[result.dayType]);
+ let level=(typeof baseLevel==='number')?baseLevel:2;
+ if(variant==='light')level=Math.min(level,1);
+ if(variant==='recovery')level=0;
+ return chooseWorkouts(profile,Object.assign({},result,{dayType:dayTypeForLevel(level)}));
+}
+
+// 持久化今日方案时一并存入 enriched，保证当天跳转/刷新稳定不重算；并兼容旧版无 enriched 的方案。
+function saveTodayPlan(recommendation,checkin,workouts){
+ const est=(recommendation&&(recommendation.cycleEstimate||recommendation.phase))||{};
+ const enriched=recommendation.enriched||buildEnriched(read(STORAGE_KEYS.USER_PROFILE,{}),recommendation,checkin);
+ const plan={version:1,date:today(),createdAt:now(),checkin:checkin||{},score:recommendation.score,dayType:recommendation.dayType,copyKey:recommendation.dayType,phase:est,cycleEstimate:est,subjectiveConflict:!!recommendation.subjectiveConflict,workoutIds:(workouts||[]).map(w=>w&&w.id).filter(Boolean),enriched:enriched||null};
+ save(STORAGE_KEYS.TODAY_PLAN,plan);return plan;
+}
+function hydrateTodayPlan(plan){
+ if(!plan)return null;const est=plan.cycleEstimate||plan.phase||{};
+ let workouts=(Array.isArray(plan.workoutIds)?plan.workoutIds:[]).map(workoutById).filter(Boolean);
+ if(!workouts.length)workouts=chooseWorkouts(read(STORAGE_KEYS.USER_PROFILE,{}),{dayType:plan.dayType,phase:est,cycleEstimate:est});
+ return {score:plan.score,dayType:plan.dayType,copy:copy[plan.copyKey]||copy[plan.dayType],phase:est,cycleEstimate:est,subjectiveConflict:!!plan.subjectiveConflict,workouts,checkin:plan.checkin||{},enriched:plan.enriched||null};
+}
+
+// 重写打卡保存：算出 enriched 并存入方案，重置方案版本切换。
+function saveCheckin(){
+ if(!valid(checkinFields,state.checkin))return;
+ const profile=read(STORAGE_KEYS.USER_PROFILE,{}),cp=cycleProfile();
+ if(needsCycleProfile(profile)&&!hasCycleProfile()){tip('先补充周期信息，我们才能把训练建议和妳的周期关联起来。');state.screen='cycle-setup';return render();}
+ const recommendation=calculateRecommendation({checkin:state.checkin,profile,cycleProfile:cp}),estimate=recommendation.cycleEstimate;
+ recommendation.enriched=buildEnriched(profile,recommendation,state.checkin);
+ const x={date:today(),...state.checkin,score:recommendation.score,dayType:recommendation.dayType,phaseKey:estimate.phaseKey,phaseLabel:estimate.phaseLabel,createdAt:now()};
+ const items=read(STORAGE_KEYS.DAILY_CHECKINS,[]).filter(i=>i.date!==x.date);items.unshift(x);save(STORAGE_KEYS.DAILY_CHECKINS,items);
+ const planWorkouts=chooseWorkouts(profile,recommendation);
+ state.last={...recommendation,workouts:planWorkouts,checkin:x};state.variant='standard';
+ saveTodayPlan(recommendation,x,planWorkouts);
+ eventLog('checkin.completed');eventLog('recommendation.created',recommendation.dayType+' · '+estimate.phaseKey);
+ state.screen='result';render();
+}
+
+// 把引擎依据渲染成"为什么这样推荐"抽屉（原生 <details>，无需额外事件）。
+function whyDrawer(enriched){
+ if(!enriched)return '';
+ const reasonsHtml=(enriched.primaryReasons||[]).map(r=>'<li>'+esc(r)+'</li>').join('');
+ const evid=(enriched.evidenceNotes||[]).slice(0,3).map(n=>'<li>'+esc(n.text)+'<small class="evidence-src">来源：'+esc(n.source)+'</small></li>').join('');
+ const disc=(enriched.disclaimers||[]).map(d=>'<li>'+esc(d)+'</li>').join('');
+ return '<details class="why-drawer"><summary>为什么这样推荐？查看依据与边界</summary>'+
+  (reasonsHtml?'<p class="why-sub">基于妳的记录：</p><ul class="why-list">'+reasonsHtml+'</ul>':'')+
+  (evid?'<p class="why-sub">循证依据：</p><ul class="why-evidence">'+evid+'</ul>':'')+
+  (disc?'<ul class="why-disclaimer">'+disc+'</ul>':'')+
+  '<button class="button button-quiet small" data-action="go" data-screen="knowledge">查看完整推荐依据与内容边界 →</button></details>';
+}
+
+// 生活方式与更年期提示（方向性、可执行、非处方）。
+function lifestyleBlock(enriched){
+ if(!enriched)return '';
+ const tips=[].concat(enriched.lifestyleTips.recovery||[],enriched.lifestyleTips.hydration||[],enriched.lifestyleTips.nutrition||[]);
+ const meno=(enriched.menopause&&enriched.menopause.active)?(enriched.menopause.tips||[]):[];
+ if(!tips.length&&!meno.length)return '';
+ const tipsHtml=tips.map(t=>'<li>'+esc(t)+'</li>').join('');
+ const menoHtml=meno.map(t=>'<li>'+esc(t)+'</li>').join('');
+ return '<section class="section-panel lifestyle-panel"><p class="eyebrow">RECOVERY & FUEL</p><h2 class="section-title">恢复 · 补水 · 营养</h2>'+
+  (tipsHtml?'<ul class="lifestyle-list">'+tipsHtml+'</ul>':'')+
+  (menoHtml?'<p class="why-sub">围绝经 / 更年期方向（生活方式建议，不替代医疗）：</p><ul class="lifestyle-list">'+menoHtml+'</ul>':'')+'</section>';
+}
+
+// 把当前用户状态（打卡 + 周期推算 + 身体阶段 + 日类型）映射到科普卡 / 饮食建议的 trigger。
+function deriveContentTriggers(checkin,cycleEstimate,profile,dayType){
+ checkin=checkin||{};cycleEstimate=cycleEstimate||{};profile=profile||{};
+ const phase=cycleEstimate.phaseKey||cycleEstimate.current_phase;
+ const stages=Array.isArray(profile.bodyStage)?profile.bodyStage:(profile.bodyStage?[profile.bodyStage]:[]);
+ const menopause=stages.some(s=>/围绝经|绝经/.test(s));
+ const science=new Set(),diet=new Set();
+ if(phase==='menstrual'){science.add('on_period');diet.add('menstrual');}
+ if(phase==='premenstrual'){science.add('premenstrual');diet.add('luteal_premenstrual');}
+ if(phase==='luteal')diet.add('luteal_premenstrual');
+ if(phase==='follicular')science.add('follicular');
+ if(checkin.cycleStatus==='正在出血'){science.add('on_period');diet.add('menstrual');}
+ if(checkin.cycleStatus==='经前疲劳 / PMS 明显'){science.add('premenstrual');diet.add('luteal_premenstrual');}
+ if(checkin.sleep==='差')science.add('sleep_poor');
+ if(checkin.energy==='低'){science.add('low_energy');diet.add('low_energy');}
+ if((checkin.stressMood&&checkin.stressMood!=='稳定')||checkin.cycleStatus==='情绪波动明显')science.add('low_mood');
+ if(menopause){science.add('menopause_stage');diet.add('menopause');}
+ if(['冲刺日','常规日'].includes(dayType))science.add('strength_day');
+ science.add('general'); // 兜底放最后，避免占满更贴合状态的卡位
+ return {science:[...science],diet:[...diet]};
+}
+// 灰字出处页脚：按唯一 sourceFile 编号 + 统一免责。
+function buildIndexer(){const files=[];return {idx:f=>{let i=files.indexOf(f);if(i<0){files.push(f);i=files.length-1;}return i+1;},files};}
+function sourceFootHtml(files,disclaimers){return '<p class="source-foot">'+files.map((f,i)=>'['+(i+1)+'] '+esc(f)).join('　')+(disclaimers&&disclaimers.length?'<br>'+disclaimers.map(esc).join(' '):'')+'</p>';}
+// 饮食建议块：按体重蛋白参考卡 + 2–4 条方向性建议 + 灰字出处。
+function dietBlock(triggers,profile){
+ const DG=window.NvxunDietGuidance;if(!DG)return '';
+ const tips=DG.getTips(triggers.diet).slice(0,4);
+ const stages=Array.isArray(profile.bodyStage)?profile.bodyStage:(profile.bodyStage?[profile.bodyStage]:[]);
+ const menopause=stages.some(s=>/围绝经|绝经/.test(s));
+ const m=newest(read(STORAGE_KEYS.BODY_METRICS,[]),'date')[0];
+ const weight=m&&Number(m.weight)>0?Number(m.weight):null;
+ const tgt=weight?DG.proteinTargetByWeight(weight,{menopause}):null;
+ const ix=buildIndexer();
+ const proteinN=ix.idx(DG.PROTEIN_SOURCE);
+ const proteinCard=tgt
+  ?'<div class="protein-card"><p class="pc-head">今日蛋白参考<sup>['+proteinN+']</sup><span class="pc-weight">按 '+tgt.weightKg+'kg 估算</span></p><p class="pc-range"><strong>'+tgt.minG+'–'+tgt.maxG+' g</strong> / 天</p><p class="pc-food">'+esc(DG.proteinFoodEquivalents(Math.round((tgt.minG+tgt.maxG)/2)))+'</p></div>'
+  :'<div class="protein-card"><p class="pc-head">今日蛋白参考<sup>['+proteinN+']</sup></p><p class="pc-food">每餐一掌心优质蛋白 ≈ 20–30g，全天约 3–5 份。<br><span class="tiny">在「记录 · 身体数据」填写体重后，可按体重给出更贴合的区间。</span></p></div>';
+ const tipsHtml=tips.map(t=>'<li><span class="tip-main">'+esc(t.tip)+'<sup>['+ix.idx(t.sourceFile)+']</sup></span><span class="tip-why">'+esc(t.rationale)+'</span></li>').join('');
+ const disc=[DG.PROTEIN_DISCLAIMER].concat(Object.values(DG.DIET_DISCLAIMERS));
+ return '<section class="section-panel diet-advice"><p class="eyebrow">EAT FOR TODAY</p><h2 class="section-title">今天怎么吃</h2>'+proteinCard+'<ul class="diet-list">'+tipsHtml+'</ul>'+sourceFootHtml(ix.files,disc)+'</section>';
+}
+// 科普卡片块：按状态取 1–3 张，标题 + 正文 + 灰字出处。
+function scienceBlock(triggers){
+ const SC=window.NvxunScienceCards;if(!SC)return '';
+ const order=triggers.science.filter(t=>t!=='general').concat(triggers.science.indexOf('general')>=0?['general']:[]);
+ const seen=new Set(),cards=[];
+ order.forEach(tr=>{(SC.getCardsForState(tr)||[]).forEach(c=>{if(!seen.has(c.id)&&cards.length<3){seen.add(c.id);cards.push(c);}});});
+ if(!cards.length)return '';
+ const ix=buildIndexer();
+ const cardsHtml=cards.map(c=>'<article class="science-card"><h3>'+esc(c.title)+'<sup>['+ix.idx(c.sourceFile)+']</sup></h3><p>'+esc(c.body)+'</p></article>').join('');
+ return '<section class="section-panel science-cards"><p class="eyebrow">GOOD TO KNOW</p><h2 class="section-title">女本位科普</h2>'+cardsHtml+sourceFootHtml(ix.files,Object.values(SC.SCIENCE_DISCLAIMERS))+'</section>';
+}
+// 重写今日推荐结果页：主卡 + 强度/重点/时长 + 三档替代方案 + 为什么 + 生活方式 + 安全。
+function result(){
+ let saved=state.last||hydrateTodayPlan(loadTodayPlan());
+ if(!saved){const fb=latest();if(fb){saved=fb;if(fb.checkin&&fb.checkin.date===today())saveTodayPlan(fb,fb.checkin,fb.workouts);}}
+ if(!saved){state.screen='checkin';return render();}
+ state.last=saved;
+ const p=read(STORAGE_KEYS.USER_PROFILE,{}),r=Object.assign({},saved,{cycleEstimate:saved.cycleEstimate||saved.phase});
+ let enriched=saved.enriched;if(!enriched){enriched=buildEnriched(p,r,r.checkin);}
+ const c=r.copy||copy[r.dayType];
+ const variant=state.variant||'standard';
+ const selected=enriched?variantWorkouts(p,r,enriched,variant):(r.workouts||chooseWorkouts(p,r));
+ const variantBtn=(key,label)=>'<button type="button" class="variant-tab '+(variant===key?'selected':'')+'" data-action="set-variant" data-variant="'+key+'">'+label+'</button>';
+ const variantNote={standard:'标准版：按妳今天的状态给出的常规强度。',light:'轻量版：在标准方案基础上降低强度与总量，状态一般时也能完成。',recovery:'恢复 / 低冲击版：以活动度、拉伸和低冲击为主，适合疼痛、疲劳或想给身体留余地时。'}[variant];
+ const mainCard=enriched?('<section class="today-main-card"><div class="tmc-row"><span class="tmc-label">建议强度</span><strong>'+esc(enriched.intensityLabel)+'</strong></div><div class="tmc-row"><span class="tmc-label">今日重点</span><strong>'+esc(enriched.focus)+'</strong></div><div class="tmc-row"><span class="tmc-label">建议时长</span><strong>'+esc(enriched.durationTargetMin)+' 分钟左右</strong></div></section>'):'';
+ const whyText=enriched?whyDrawer(enriched):('<section class="section-panel"><p class="eyebrow">WHY THIS TODAY</p><h2 class="section-title">为什么今天这样推荐？</h2><p class="body-copy">'+esc(reasons(p,r.checkin,r))+'</p></section>');
+ const safetyExtra=(enriched&&enriched.safetyFlags&&enriched.safetyFlags.length)?'<br><strong>安全提醒：</strong>'+enriched.safetyFlags.map(esc).join(' '):(r.checkin.pain==='明显'?'<br><strong>安全提醒：</strong>明显疼痛或异常不适时，请停止训练并在需要时咨询医生。':'');
+ shell(header()+'<p class="eyebrow">YOUR TRAINING DECISION</p><section class="result-hero '+(c.tone==='recovery'?'recovery':c.tone==='deload'?'deload':'')+'"><span class="result-score">状态评分 '+r.score+' / 15+</span><h1>'+esc(c.title)+'</h1><p>'+esc(c.explain)+'</p></section>'+
+  mainCard+
+  cycleCard(r.cycleEstimate)+
+  whyText+
+  '<p class="recommendation-copy"><strong>今天怎么练：</strong>'+esc(c.advice)+'</p>'+
+  '<div class="section-head"><h2 class="section-title">选一个现在做得到的</h2><span class="tiny">点上方切换标准 / 轻量 / 恢复</span></div>'+
+  '<div class="variant-tabs">'+variantBtn('standard','标准版')+variantBtn('light','轻量版')+variantBtn('recovery','恢复 / 低冲击版')+'</div>'+
+  '<p class="variant-note">'+esc(variantNote)+'</p>'+
+  '<div class="workout-grid">'+selected.map(workoutCardCompact).join('')+'</div>'+
+  lifestyleBlock(enriched)+
+  (function(){const tg=deriveContentTriggers(r.checkin,r.cycleEstimate,p,r.dayType);return dietBlock(tg,p)+scienceBlock(tg);})()+
+  '<div class="callout '+(r.dayType==='恢复日'?'warning':'')+'"><strong>给今天的妳：</strong>'+esc(c.encourage)+safetyExtra+'</div>'+
+  '<button class="button button-quiet redo-checkin" data-action="redo-checkin">重新评估今天的状态</button>'+
+  '<button class="button button-secondary feedback-entry" data-action="go" data-screen="product-feedback">这个建议贴合妳今天的状态吗？反馈一下</button>');
+}
+
+// 重写训练后反馈：加入强度感受与下次倾向，闭环写入本机并微调下一次推荐。
+function feedback(){
+ const w=workoutLibraryV2.find(x=>x.id===state.workoutId);if(!w){state.screen='result';return render();}
+ const fields=[['completion','今天是否完成？',['完成','完成一部分','没有完成']],['intensityFeel','强度感受',['太轻','合适','偏累']],['afterFeeling','训练后身体感受？',['更有精神','正常','更累','有不适']],['nextPreference','下次类似训练',['希望增加','保持','希望降低']],['recommendationAccuracy','这个推荐准吗？（可选）',['很准','还可以','不太准']]];
+ shell(header('workout')+'<p class="eyebrow">CLOSE THE LOOP</p><h1 class="page-title">做完就很好。<br>听听身体怎么说。</h1><p class="form-intro">'+esc(w.title)+' · '+esc(w.duration)+'</p><form id="feedback-form">'+fields.map(f=>field(f,state.feedback,'feedback')).join('')+'<label class="input-field">想补充什么？<span>可选，只保存在本机</span><textarea name="note" rows="4" maxlength="300" placeholder="例如：下蹲时膝盖有点紧，明天想安排散步。">'+esc(state.feedback.note||'')+'</textarea></label>'+strengthLogger(w)+'<button class="button button-primary">保存反馈</button></form>');
+}
+function saveFeedback(form){
+ captureFeedback(form);
+ if(['completion','intensityFeel','afterFeeling','nextPreference'].some(k=>!state.feedback[k]))return tip('请先完成完成情况、强度感受、身体感受和下次倾向这几项');
+ const w=workoutLibraryV2.find(x=>x.id===state.workoutId),result=state.last||latest();
+ const log={date:today(),workoutId:w.id,workoutTitle:w.title,workoutType:w.typeLabel||w.type,completion:state.feedback.completion,intensityFeel:state.feedback.intensityFeel,afterFeeling:state.feedback.afterFeeling,nextPreference:state.feedback.nextPreference,recommendationAccuracy:state.feedback.recommendationAccuracy||'',note:state.feedback.note||'',createdAt:now()};
+ const logs=read(STORAGE_KEYS.WORKOUT_LOGS,[]).filter(x=>!(x.date===log.date&&x.workoutId===log.workoutId));logs.unshift(log);save(STORAGE_KEYS.WORKOUT_LOGS,logs);
+ if(form.elements.strengthDuration)state.strength.durationMinutes=form.elements.strengthDuration.value;
+ const has=state.strength.exercises.some(x=>x.name.trim())||state.strength.durationMinutes;
+ if(has){const l={date:today(),workoutTitle:w.title,workoutType:w.typeLabel||w.type,durationMinutes:state.strength.durationMinutes,exercises:state.strength.exercises.filter(x=>Object.values(x).some(v=>String(v).trim())),note:state.strength.note||'',createdAt:now()},a=read(STORAGE_KEYS.STRENGTH_LOGS,[]).filter(x=>!(x.date===l.date&&x.workoutTitle===l.workoutTitle));a.unshift(l);save(STORAGE_KEYS.STRENGTH_LOGS,a);}
+ eventLog('workout.feedback_saved',w.id+' · '+log.completion);
+ fireSync(syncTrainingFeedback(log,w,result));
+ state.screen='records';state.recordTab=has?'training':'state';
+ tip('已保存。下一次推荐会参考妳的强度感受和倾向。');render();
+}
+
+// 新增"推荐依据与内容边界"页面：我们如何推荐 / 内容来源原则 / 来源列表 / 免责声明 / 排除内容。
+function knowledgePage(){
+ const K=(typeof NvxunKnowledge!=='undefined')?NvxunKnowledge:null;
+ const sources=K?K.SOURCES.map(s=>'<li><strong>'+esc(s.name)+'</strong><br>'+esc(s.usedFor)+'</li>').join(''):'';
+ const excluded=K?K.EXCLUDED_CONTENT.map(x=>'<li><strong>'+esc(x.topic)+'</strong><br><small>'+esc(x.reason)+'</small></li>').join(''):'';
+ const disc=K?Object.values(K.DISCLAIMERS).map(d=>'<li>'+esc(d)+'</li>').join(''):'';
+ shell(header('privacy')+'<p class="eyebrow">HOW WE RECOMMEND</p><h1 class="page-title">我们如何<br>给妳推荐。</h1>'+
+  '<section class="section-panel"><h2 class="section-title">我们如何推荐</h2><ul class="why-list"><li>先看安全、疼痛、疲劳和恢复，再看目标、时间、经验，最后才参考周期或更年期状态。</li><li>月经周期只是可选参考，不是决定妳训练能力的标签；不记录周期也能得到完整建议。</li><li>妳自己的记录和反馈优先于任何阶段推算。</li></ul></section>'+
+  '<section class="section-panel"><h2 class="section-title">内容来源原则</h2><ul class="why-list"><li>主要参考经筛选的女性运动生理、临床营养、更年期医学与同行评审研究。</li><li>不使用性别优越论、伪科学、极端饮食或未经验证的激素用药建议。</li></ul></section>'+
+  '<section class="section-panel"><h2 class="section-title">主要来源</h2><ul class="source-list">'+sources+'</ul></section>'+
+  '<section class="section-panel"><h2 class="section-title">我们明确不采用</h2><ul class="source-list">'+excluded+'</ul></section>'+
+  '<section class="callout warning"><h2 class="section-title">免责声明</h2><ul class="why-disclaimer">'+disc+'</ul></section>'+
+  '<button class="button button-secondary" data-action="go" data-screen="result">返回今日方案</button>');
+}
+
+// 重写 render：在屏幕表中加入 knowledge 页面。
+function render(){
+ if(state.mode==='admin'){admin();return wireRingFallback();}
+ const f={welcome,profile,'cycle-setup':cycleSetup,checkin,result,workout,feedback,cycle,records,library,action:movement,videos:videoLibrary,'video-submit':videoSubmit,'video-report':videoReport,'strength-log':strengthLog,privacy,knowledge:knowledgePage,productFeedback,'product-feedback':productFeedback}[state.screen]||welcome;
+ f();wireRingFallback();
+}
+
+// 替代方案切换的事件（追加监听，不改动既有委托闭包）。
+app.addEventListener('click',e=>{const b=e.target.closest('[data-action="set-variant"]');if(!b)return;state.variant=b.dataset.variant;render();});
+
+/* ============================================================
+ * NVXUN_V1 — v1.0 升级：智能经期日历(D) + 月经祝贺与烟花(C)
+ *            + 记录页日历/补填(E) + 日历配色与分类(F) + 视频取消(G)
+ * 数据仅来自本机记录；不接任何第三方/网络。
+ * ============================================================ */
+STORAGE_KEYS.CELEBRATED_PERIODS='nvxun_celebratedPeriodStarts';
+STORAGE_KEYS.DAY_WORKOUTS='nvxun_dayWorkouts';
+// H：身体阶段改多选——把历史的单值 bodyStage 规整为数组，供多选 UI 与下游统一处理。
+if(state.profile&&typeof state.profile.bodyStage==='string')state.profile.bodyStage=state.profile.bodyStage?[state.profile.bodyStage]:[];
+
+/* —— D：智能经期日历点选（首日自动 5 天 / 再点改区间 / 区间内点缩短，始终连续）—— */
+function handleCycleDayTap(date){
+ const days=menstruationDays(),set=new Set(days),episodes=deriveEpisodes(days);
+ const ep=episodes.find(e=>daysBetween(e.start_date,date)>=0&&daysBetween(date,e.end_date)>=0);
+ if(ep){ // 区间内 → 从该日到区间末尾取消（缩短），保持连续
+  rangeDays(date,ep.end_date).forEach(d=>set.delete(d));
+  saveMenstruationDays([...set]);state.selectedPhase=null;
+  state.pendingPeriodStart=ep.start_date===date?null:ep.start_date;
+  return {newStart:null};
+ }
+ // 失效校验：pending 首日若已被清除则丢弃
+ if(state.pendingPeriodStart&&!set.has(state.pendingPeriodStart))state.pendingPeriodStart=null;
+ let anchor=null;
+ if(state.pendingPeriodStart&&daysBetween(state.pendingPeriodStart,date)>0)anchor=state.pendingPeriodStart;
+ if(!anchor){
+  const before=episodes.find(e=>addDays(e.end_date,1)===date); // 紧接已有区间末尾之后 → 延伸
+  const after=episodes.find(e=>addDays(date,1)===e.start_date);  // 紧接已有区间起点之前 → 起点前移并入
+  if(before)anchor=before.start_date;
+  else if(after){set.add(date);saveMenstruationDays([...set]);state.selectedPhase=null;state.pendingPeriodStart=date;return {newStart:null};}
+ }
+ if(anchor){ // 再点更靠后的日子 → 首日→该日整段标红（覆盖默认 5 天）
+  rangeDays(anchor,date).forEach(d=>set.add(d));
+  saveMenstruationDays([...set]);state.selectedPhase=null;state.pendingPeriodStart=anchor;
+  return {newStart:null};
+ }
+ // 新周期首日 → 自动标连续 5 天
+ rangeDays(date,addDays(date,4)).forEach(d=>set.add(d));
+ saveMenstruationDays([...set]);state.selectedPhase=null;state.pendingPeriodStart=date;
+ return {newStart:date};
+}
+
+/* —— C：月经祝贺 + 原生 canvas 烟花（每个周期仅一次）—— */
+function celebratedStarts(){return read(STORAGE_KEYS.CELEBRATED_PERIODS,[])||[]}
+function maybeCelebratePeriod(startISO){
+ if(!startISO)return false;
+ const done=celebratedStarts();if(done.includes(startISO))return false;
+ const gap=daysBetween(startISO,today()); // 仅为较近的新周期首日庆祝，避免补填历史误触
+ if(!(gap>=0&&gap<=10))return false;
+ save(STORAGE_KEYS.CELEBRATED_PERIODS,[...done,startISO].slice(-60));
+ eventLog('cycle.period.celebrated');
+ showPeriodCelebration(startISO);
+ return true;
+}
+function lunarHint(){return ''} // 无农历库，留空 extra（动态模板对空值成立）
+function showPeriodCelebration(startISO){
+ const PC=window.NvxunPeriodCelebration;
+ let text=PC?PC.getRandomMessage().text:'恭喜妳，又一个周期到来了。先好好照顾自己，等满血再大干一场。';
+ const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const old=document.getElementById('celebrate-overlay');if(old)old.remove();
+ const ov=document.createElement('div');ov.id='celebrate-overlay';ov.className='celebrate-overlay';
+ ov.innerHTML='<canvas class="celebrate-canvas" aria-hidden="true"></canvas><div class="celebrate-card" role="dialog" aria-live="polite" aria-label="月经祝贺"><div class="celebrate-emoji" aria-hidden="true">🎉</div><h2>月经快乐，造物主</h2><p>'+esc(text)+'</p><button type="button" class="button button-primary" data-action="celebrate-close">收下这份祝福</button></div>';
+ document.body.appendChild(ov);
+ ov.addEventListener('click',ev=>{if(ev.target===ov||ev.target.closest('[data-action="celebrate-close"]'))ov.remove();});
+ if(!reduced)burstFireworks(ov.querySelector('.celebrate-canvas'));
+ clearTimeout(showPeriodCelebration.t);
+ showPeriodCelebration.t=setTimeout(()=>{const o=document.getElementById('celebrate-overlay');if(o)o.remove();},reduced?4200:5200);
+}
+function burstFireworks(canvas){
+ if(!canvas||!canvas.getContext)return;const ctx=canvas.getContext('2d');if(!ctx)return;
+ const DPR=Math.min(2,window.devicePixelRatio||1),W=()=>window.innerWidth,H=()=>window.innerHeight;
+ canvas.width=W()*DPR;canvas.height=H()*DPR;
+ const colors=['#ef765d','#5937c9','#3c806f','#f0c34e','#e95a62','#4c8fd8'];let parts=[];
+ const burst=(x,y)=>{const n=46;for(let i=0;i<n;i++){const a=Math.PI*2*i/n,sp=(2+Math.random()*4)*DPR;parts.push({x:x*DPR,y:y*DPR,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,color:colors[(Math.random()*colors.length)|0]});}};
+ const fire=()=>burst(W()*(0.2+Math.random()*0.6),H()*(0.2+Math.random()*0.35));
+ fire();let shots=1;const shooter=setInterval(()=>{if(shots++<4)fire();else clearInterval(shooter);},260);
+ const start=performance.now();
+ (function frame(t){ctx.clearRect(0,0,canvas.width,canvas.height);parts.forEach(p=>{p.vy+=0.05*DPR;p.x+=p.vx;p.y+=p.vy;p.life-=0.012;ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,2.4*DPR,0,Math.PI*2);ctx.fill();});parts=parts.filter(p=>p.life>0);ctx.globalAlpha=1;if(t-start<2000||parts.length)requestAnimationFrame(frame);else ctx.clearRect(0,0,canvas.width,canvas.height);})(start);
+}
+
+/* —— F：当天运动分类（数据仅来自 App 自己的记录）—— */
+const DAY_WORKOUT_TYPES=[
+ {label:'力量训练',cat:'strength'},
+ {label:'全身力量',cat:'strength'},
+ {label:'瑜伽 / 普拉提',cat:'low'},
+ {label:'散步',cat:'low'},
+ {label:'拉伸 / 放松',cat:'low'},
+ {label:'有氧恢复',cat:'low'},
+ {label:'其她',cat:'low'}
+];
+function classifyDayWorkout(d){
+ const manual=(read(STORAGE_KEYS.DAY_WORKOUTS,[])||[]).find(x=>x.date===d);
+ if(manual)return manual.category||null;
+ if((read(STORAGE_KEYS.STRENGTH_LOG,[])||[]).some(s=>s.date===d))return 'strength';
+ if((read(STORAGE_KEYS.STRENGTH_LOGS,[])||[]).some(s=>s.date===d))return 'strength';
+ const w=(read(STORAGE_KEYS.WORKOUT_LOGS,[])||[]).filter(x=>x.date===d);
+ if(w.length)return w.some(x=>/力量|全身|推|拉|蹲|臀|腿|杠铃|哑铃|Push|Pull|Legs|barbell|dumbbell|machine|cable/i.test(x.workoutType||''))?'strength':'low';
+ return null;
+}
+
+/* —— E：记录页日历视图 + 任意一天补填 / 修改训练记录 —— */
+function calendarRecords(){
+ const mdSet=new Set(menstruationDays()),monthTitle=state.calendarMonth.replace('-','年')+'月';
+ const grid=monthDays().map(d=>{
+  const cls=classifyDayWorkout(d.iso),strip=cls?'<span class="cal-strip '+cls+'">'+(cls==='strength'?'力量':'轻活动')+'</span>':'';
+  return '<button class="rec-day '+(d.inMonth?'':'muted-day ')+(state.recordEditDate===d.iso?'editing ':'')+'" data-action="record-day" data-date="'+d.iso+'"><span class="day-num '+(mdSet.has(d.iso)?'is-period':'')+'">'+d.day+'</span>'+strip+'</button>';
+ }).join('');
+ const cal='<section class="cycle-calendar record-calendar"><div class="calendar-head"><button class="icon-button" data-action="cycle-prev" aria-label="上个月">‹</button><strong>'+monthTitle+'</strong><button class="icon-button" data-action="cycle-next" aria-label="下个月">›</button></div><div class="week-row">'+['日','一','二','三','四','五','六'].map(x=>'<span>'+x+'</span>').join('')+'</div><div class="month-grid record-grid">'+grid+'</div><p class="calendar-hint">点任意一天可补填 / 修改当天训练记录。绿色＝力量训练，浅黄＝低强度活动，日期红圈＝经期日。数据只来自妳自己的记录，保存在本机。</p></section>';
+ const legend='<div class="cal-legend"><span><i class="lg strength"></i>力量训练</span><span><i class="lg low"></i>低强度活动</span><span><i class="lg period"></i>经期日</span></div>';
+ return cal+legend+(state.recordEditDate?dayWorkoutForm(state.recordEditDate):'<p class="empty-small">选一天，给那天补上一条训练记录。</p>');
+}
+function dayWorkoutForm(d){
+ const cur=(read(STORAGE_KEYS.DAY_WORKOUTS,[])||[]).find(x=>x.date===d)||{};
+ const opts=DAY_WORKOUT_TYPES.map(t=>'<option value="'+esc(t.label)+'"'+(cur.type===t.label?' selected':'')+'>'+esc(t.label)+'</option>').join('');
+ return '<form id="day-workout-form" class="section-panel day-workout-form"><div class="row-between"><h2 class="section-title">'+dateLabel(d)+' · 补填 / 修改</h2><button type="button" class="text-button" data-action="record-day-close">关闭</button></div><label class="input-field">日期<input type="date" name="date" value="'+esc(d)+'" max="'+today()+'"></label><label class="input-field">当天运动类型<select name="type"><option value="">未选择（清除当天记录）</option>'+opts+'</select></label><label class="input-field">时长（分钟，可选）<input type="number" name="duration" min="0" max="600" value="'+esc(cur.durationMinutes||'')+'"></label><label class="input-field">备注（可选）<textarea name="note" rows="2" maxlength="120">'+esc(cur.note||'')+'</textarea></label><button class="button button-primary">保存这天的记录</button></form>';
+}
+function saveDayWorkout(form){
+ const e=form.elements,orig=state.recordEditDate;
+ const date=/^\d{4}-\d{2}-\d{2}$/.test(e.date.value)&&e.date.value<=today()?e.date.value:orig;
+ const type=e.type.value||'',def=DAY_WORKOUT_TYPES.find(t=>t.label===type);
+ let all=(read(STORAGE_KEYS.DAY_WORKOUTS,[])||[]).filter(x=>x.date!==date&&x.date!==orig);
+ if(type&&def){all.unshift({date,type,category:def.cat,durationMinutes:e.duration.value?Number(e.duration.value):null,note:String(e.note.value||'').trim().slice(0,120),createdAt:now()});tip('已保存 '+dateLabel(date)+' 的训练记录。');}
+ else tip('已清除 '+dateLabel(date)+' 的当天记录。');
+ save(STORAGE_KEYS.DAY_WORKOUTS,all.slice(0,400));eventLog('record.day.saved');
+ state.recordEditDate=null;state.recordTab='calendar';render();
+}
+
+/* —— 追加事件委托：日历补填、视频取消推荐(G)、祝贺弹层关闭 —— */
+app.addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;
+ if(a==='record-day'){state.recordEditDate=b.dataset.date;render();}
+ if(a==='record-day-close'){state.recordEditDate=null;render();}
+ if(a==='toggle-video-rec'){const id=b.dataset.id,s=new Set(state.dismissedVideoIds||[]);s.has(id)?s.delete(id):s.add(id);state.dismissedVideoIds=[...s];render();}
+});
+app.addEventListener('submit',e=>{if(e.target.id==='day-workout-form'){e.preventDefault();saveDayWorkout(e.target);}});
 
 eventLog('app.opened');
 render();
